@@ -2,18 +2,94 @@
 
 require 'rubygems'
 require 'commander/import'
+require 'aws'
+
+require 'ebx/version'
+require 'ebx/aws_application'
+require 'ebx/aws_application_version'
+require 'ebx/aws_environment'
+require 'ebx/aws_environment_config'
+require 'ebx/elastic_beanstalk'
+require 'ebx/aws_config'
 
 program :version, '0.0.1'
 program :description, 'eb eXtended'
+
+DEFAULT_ENV = ['production', 'development', 'staging', 'test']
  
 command :init do |c|
   c.syntax = 'ebx init [options]'
- # c.summary = ''
- # c.description = ''
+  c.summary = 'Init a new project'
+ # c.description = 'test'
  # c.example 'description', 'command example'
  # c.option '--some-switch', 'Some switch that does something'
+  #
+  #
+  ##
+  #      queue.add(TryLoadEbConfigFileOperation(queue))
+  #      queue.add(ReadAwsCredentialFileOperation(queue))
+  #      queue.add(AskForConfigFileParameterOperation(queue))
+  #      queue.add(ValidateParameterOperation(queue))
+  #      queue.add(RotateOptionsettingFileOperation(queue))
+  #      queue.add(SanitizeBranchOperation(queue))
+  #      queue.add(UpdateAwsCredentialFileOperation(queue))
+  #      queue.add(SanitizeAppVersionNameOperation(queue))
+  #      queue.add(SaveEbConfigFileOperation(queue))
+  #      queue.add(UpdateDevToolsConfigOperation(queue))
+  #      queue.add(CheckGitIgnoreFileOperation(queue))
+  # 
   c.action do |args, options|
-    say "hello world"
+    DEFAULT_ENV.each do |env|
+      ENV['AWS_ENV'] = env
+      AwsEnvironmentConfig.init_config
+    end
   end
 end
 
+
+#    elif command == CommandType.START:
+#        queue.add(CheckGitIgnoreFileOperation(queue))
+#        queue.add(LoadEbConfigFileOperation(queue))
+#        queue.add(ReadAwsCredentialFileOperation(queue))
+#        queue.add(TryGetCurrentBranchOperation(queue))
+#        queue.add(AskForMissiongParameterOperation(queue))
+#        queue.add(ValidateParameterOperation(queue))
+#        queue.add(CreateApplicationOperation(queue))
+#        queue.add(CreateApplicationVersionOperation(queue))
+#        queue.add(CreateEnvironmentOperation(queue))
+#        queue.add(SleepOperation(queue))
+#        queue.add(SaveConfigurationSettingOperation(queue))
+#        queue.add(WaitForCreateEnvironmentFinishOperation(queue))
+
+
+command :start do |c|
+  c.syntax = 'ebx start [env] [options]'
+  c.summary = 'Create an environment'
+
+  c.action do |args, options|
+    ENV['AWS_ENV'] ||= (args.shift || 'development')
+    settings = {
+      app_name: 'test_app',
+      app_description: 'test desc',
+      app_version: 'version1',
+      version_description: 'a version'
+    }
+
+    AwsCredentialConfig.set_credentials
+
+
+ec2 = AWS.ec2 #=> AWS::EC2
+    
+
+    app = AwsApplication.new(settings)
+    app.create
+
+    ver = AwsApplicationVersion.new(settings)
+    ver.create
+
+    env = AwsEnvironment.new(settings)
+    env.create
+    
+    say env.describe[:environments].first.to_s
+  end
+end

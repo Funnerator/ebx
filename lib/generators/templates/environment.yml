@@ -1,0 +1,15 @@
+base: &base
+  region: 'us-west-2'
+  solution_stack: '64bit Amazon Linux running Ruby 1.9.3'
+
+production:
+  <<: *base
+
+test:
+  <<: *base
+
+staging:
+  <<: *base
+
+development:
+  <<: *base
