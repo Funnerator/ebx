@@ -71,15 +71,10 @@ command :start do |c|
     settings = {
       app_name: 'test_app',
       app_description: 'test desc',
-      app_version: 'version1',
       version_description: 'a version'
     }
 
     AwsCredentialConfig.set_credentials
-
-
-ec2 = AWS.ec2 #=> AWS::EC2
-    
 
     app = AwsApplication.new(settings)
     app.create
@@ -91,5 +86,22 @@ ec2 = AWS.ec2 #=> AWS::EC2
     env.create
     
     say env.describe[:environments].first.to_s
+  end
+end
+
+command :status do |c|
+  c.action do |args, options|
+    ENV['AWS_ENV'] ||= (args.shift || 'development')
+    AwsCredentialConfig.set_credentials
+
+    settings = {
+      app_name: 'test_app',
+      app_description: 'test desc',
+      version_description: 'a version'
+    }
+    env = AwsEnvironment.new(settings)
+    env.describe[:environments].each do |env|
+      say env.to_s
+    end
   end
 end
