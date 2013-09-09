@@ -1,6 +1,10 @@
 base: &base
-  region: 'us-west-2'
+  name: 'test_app'
+  description: 'test desc'
   solution_stack: '64bit Amazon Linux running Ruby 1.9.3'
+  environments:
+    - region: 'us-west-2'
+    - region: 'us-east-1'
 
 production:
   <<: *base

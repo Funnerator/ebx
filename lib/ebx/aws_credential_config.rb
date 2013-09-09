@@ -13,7 +13,7 @@ class AwsCredentialConfig
 
         AWS.config({
           access_key_id: secrets['AWSAccessKeyId'],
-          secret_access_key: secrets['AWSSecretKey'],
+          secret_access_key: secrets['AWSSecretKey']
         })
       end
     end

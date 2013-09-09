@@ -9,9 +9,8 @@ class AwsApplicationVersion
     begin
       if describe[:application_versions].empty?
         ElasticBeanstalk.instance.client.create_application_version(
-          application_name: settings[:app_name],
-          version_label: version,
-          description: settings[:version_description],
+          application_name: settings['name'],
+          version_label: version
           #source_bundle: {
           #  s3_bucket: settings[:source_bucket],
           #  s3_key: settings[:source_key]
@@ -25,7 +24,7 @@ class AwsApplicationVersion
 
   def describe
     ElasticBeanstalk.instance.client.describe_application_versions(
-      application_name: settings[:app_name],
+      application_name: settings['name'],
       version_labels: [version]
     )
   end

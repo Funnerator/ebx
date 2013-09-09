@@ -9,8 +9,8 @@ class AwsApplication
     begin
       if describe[:applications].empty?
         ElasticBeanstalk.instance.client.create_application(
-          application_name: settings[:app_name],
-          description: settings[:app_description]
+          application_name: settings['name'],
+          description: settings['description']
         )
       end
     rescue Exception
@@ -20,7 +20,7 @@ class AwsApplication
 
   def describe
     ElasticBeanstalk.instance.client.describe_applications(
-      application_names: [settings[:app_name]]
+      application_names: [settings['name']]
     )
   end
 end

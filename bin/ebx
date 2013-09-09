@@ -2,15 +2,8 @@
 
 require 'rubygems'
 require 'commander/import'
-require 'aws'
 
-require 'ebx/version'
-require 'ebx/aws_application'
-require 'ebx/aws_application_version'
-require 'ebx/aws_environment'
-require 'ebx/aws_environment_config'
-require 'ebx/elastic_beanstalk'
-require 'ebx/aws_config'
+require 'ebx'
 
 program :version, '0.0.1'
 program :description, 'eb eXtended'
@@ -68,24 +61,9 @@ command :start do |c|
 
   c.action do |args, options|
     ENV['AWS_ENV'] ||= (args.shift || 'development')
-    settings = {
-      app_name: 'test_app',
-      app_description: 'test desc',
-      version_description: 'a version'
-    }
 
     AwsCredentialConfig.set_credentials
-
-    app = AwsApplication.new(settings)
-    app.create
-
-    ver = AwsApplicationVersion.new(settings)
-    ver.create
-
-    env = AwsEnvironment.new(settings)
-    env.create
-    
-    say env.describe[:environments].first.to_s
+    DeployGroup.new.create
   end
 end
 

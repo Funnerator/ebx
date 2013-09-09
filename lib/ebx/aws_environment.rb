@@ -2,14 +2,14 @@ class AwsEnvironment
   attr_accessor :settings
 
   def initialize(settings)
-    @settings = settings.merge(AwsEnvironmentConfig.read_config[ENV['AWS_ENV']])
+    @settings = settings
   end
 
   def create
     begin
       if describe[:environments].empty?
         ElasticBeanstalk.instance.client.create_environment(
-          application_name: settings[:app_name],
+          application_name: settings['name'],
           version_label: version,
           environment_name: name,
           solution_stack_name: settings['solution_stack'],
@@ -34,6 +34,7 @@ class AwsEnvironment
   end
 
   def describe
+    binding.pry
     ElasticBeanstalk.instance.client.describe_environments({
       environment_names: [name]
     })

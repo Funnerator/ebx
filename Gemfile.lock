@@ -4,6 +4,7 @@ PATH
     ebx (0.0.1)
       aws-sdk (~> 1.17.0)
       commander (~> 4.1.5)
+      pry (> 0)
 
 GEM
   remote: https://rubygems.org/
@@ -12,12 +13,19 @@ GEM
       json (~> 1.4)
       nokogiri (< 1.6.0)
       uuidtools (~> 2.1)
+    coderay (1.0.9)
     commander (4.1.5)
       highline (~> 1.6.11)
     highline (1.6.19)
     json (1.8.0)
+    method_source (0.8.2)
     nokogiri (1.5.10)
+    pry (0.9.12.2)
+      coderay (~> 1.0.5)
+      method_source (~> 0.8)
+      slop (~> 3.4)
     rake (10.1.0)
+    slop (3.4.6)
     uuidtools (2.1.4)
 
 PLATFORMS
