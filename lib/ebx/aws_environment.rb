@@ -25,6 +25,26 @@ class AwsEnvironment
     end
   end
 
+  def stop
+    begin
+      if !describe[:environments].empty?
+        environments = ElasticBeanstalk.instance.client.describe_environments({
+          environment_names: [name]
+        })[:environments]
+
+        environments.each do |env|
+          puts "Stopping #{env[:environment_name]} - #{env[:environment_id]}"
+          ElasticBeanstalk.instance.client.terminate_environment({
+            environment_id: env[:environment_id]
+          })
+        end
+
+      end
+    rescue Exception
+      raise $! # TODO
+    end
+  end
+
   def version
     `git rev-parse HEAD`
   end
@@ -34,7 +54,6 @@ class AwsEnvironment
   end
 
   def describe
-    binding.pry
     ElasticBeanstalk.instance.client.describe_environments({
       environment_names: [name]
     })

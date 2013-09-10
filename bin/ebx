@@ -67,6 +67,18 @@ command :start do |c|
   end
 end
 
+command :stop do |c|
+  c.syntax = 'ebx stop [env] [options]'
+  c.summary = 'Stop a running environment'
+
+  c.action do |args, options|
+    ENV['AWS_ENV'] ||= (args.shift || 'development')
+
+    AwsCredentialConfig.set_credentials
+    DeployGroup.new.stop
+  end
+end
+
 command :status do |c|
   c.action do |args, options|
     ENV['AWS_ENV'] ||= (args.shift || 'development')

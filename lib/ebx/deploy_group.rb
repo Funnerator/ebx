@@ -22,4 +22,16 @@ class DeployGroup
       env.create
     end
   end
+
+  def stop
+    global_settings['environments'].each do |env_settings|
+      AWS.config(region: env_settings['region'] || Ebx::DEFAULT_REGION)
+      ElasticBeanstalk.instance.update_settings
+
+      env_settings = global_settings.merge(env_settings)
+
+      env = AwsEnvironment.new(env_settings)
+      env.stop
+    end
+  end
 end
