@@ -34,7 +34,7 @@ command :init do |c|
   c.action do |args, options|
     DEFAULT_ENV.each do |env|
       ENV['AWS_ENV'] = env
-      AwsEnvironmentConfig.init_config
+      Ebx::AwsEnvironmentConfig.init_config
     end
   end
 end
@@ -62,8 +62,8 @@ command :start do |c|
   c.action do |args, options|
     ENV['AWS_ENV'] ||= (args.shift || 'development')
 
-    AwsCredentialConfig.set_credentials
-    DeployGroup.new.create
+    Ebx::AwsCredentialConfig.set_credentials
+    Ebx::DeployGroup.new.create
   end
 end
 
@@ -74,22 +74,22 @@ command :stop do |c|
   c.action do |args, options|
     ENV['AWS_ENV'] ||= (args.shift || 'development')
 
-    AwsCredentialConfig.set_credentials
-    DeployGroup.new.stop
+    Ebx::AwsCredentialConfig.set_credentials
+    Ebx::DeployGroup.new.stop
   end
 end
 
 command :status do |c|
   c.action do |args, options|
     ENV['AWS_ENV'] ||= (args.shift || 'development')
-    AwsCredentialConfig.set_credentials
+    Ebx::AwsCredentialConfig.set_credentials
 
     settings = {
       app_name: 'test_app',
       app_description: 'test desc',
       version_description: 'a version'
     }
-    env = AwsEnvironment.new(settings)
+    env = Ebx::AwsEnvironment.new(settings)
     env.describe[:environments].each do |env|
       say env.to_s
     end
