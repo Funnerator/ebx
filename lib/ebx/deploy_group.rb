@@ -42,6 +42,10 @@ class DeployGroup
     `git rev-parse HEAD`.chomp!
   end
 
+  def version_description
+    `git log --pretty=format:'%s - %an' -1`.chomp!
+  end
+
   def env_name
     "#{ENV['AWS_ENV']}-#{`git rev-parse --abbrev-ref HEAD`}".strip.gsub(/\s/, '-')[0..23]
   end
