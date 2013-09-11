@@ -34,9 +34,8 @@ class AwsS3
   def push_application_version(version)
     @s3.buckets[application_bucket_name].objects[application_version_name(version)].tap do |o|
       unless o.exists?
-        `git ls-tree -r --name-only HEAD | xargs zip #{application_version_name(version)}`
-
-        o.write(Pathname.new(application_version_name(version) + '.zip'))
+        zip = `git ls-tree -r --name-only HEAD | zip - -@`
+        o.write(zip)
       end
     end
 
