@@ -12,8 +12,7 @@ module Ebx
 
     def create
       global_settings.merge!(
-        'version' => version,
-        'env_name' => env_name
+        'version' => version
       )
 
       environments.each do |env_settings|
@@ -21,11 +20,6 @@ module Ebx
 
         ElasticBeanstalk.instance.update_settings
         AwsS3.instance.update_settings
-
-        sqs = AWS::SQS.new
-        queue =  sqs.queues.create(sqs_name)
-
-        notification_service.subscribe(@queue)
 
         env_settings = global_settings.merge(env_settings)
 
@@ -45,6 +39,7 @@ module Ebx
 
         env = AwsEnvironment.new(env_settings)
         env.create
+        env.subscribe(notification_service)
       end
     end
 
@@ -60,12 +55,18 @@ module Ebx
       AWS.config(region: old_region)
     end
 
-    def sns_name
-      env_name
+    def describe
+      environments.each do |env_settings|
+        AWS.config(region: env_settings['region'] || Ebx::DEFAULT_REGION)
+
+        ElasticBeanstalk.instance.update_settings
+        env = AwsEnvironment.new(env_settings)
+        say env.describe
+      end
     end
 
-    def sqs_name
-      "#{env_name}-sns"
+    def sns_name
+      "#{ENV['AWS_ENV']}-sns"
     end
 
     def version
@@ -74,10 +75,6 @@ module Ebx
 
     def version_description
       `git log --pretty=format:'%s - %an' -1`.chomp!
-    end
-
-    def env_name
-      "#{ENV['AWS_ENV']}-#{`git rev-parse --abbrev-ref HEAD`}".strip.gsub(/\s/, '-')[0..23]
     end
 
     def stop

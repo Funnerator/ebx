@@ -84,14 +84,6 @@ command :status do |c|
     ENV['AWS_ENV'] ||= (args.shift || 'development')
     Ebx::AwsCredentialConfig.set_credentials
 
-    settings = {
-      app_name: 'test_app',
-      app_description: 'test desc',
-      version_description: 'a version'
-    }
-    env = Ebx::AwsEnvironment.new(settings)
-    env.describe[:environments].each do |env|
-      say env.to_s
-    end
+    Ebx::DeployGroup.new.describe
   end
 end

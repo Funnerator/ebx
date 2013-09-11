@@ -1,8 +1,8 @@
 module Ebx
   class AwsEnvironment
-    attr_accessor :settings
+    attr_accessor :settings, :queue
 
-    def initialize(settings)
+    def initialize(settings={})
       @settings = settings
     end
 
@@ -12,7 +12,7 @@ module Ebx
           ElasticBeanstalk.instance.client.create_environment(
             application_name: settings['name'],
             version_label: settings['version'],
-            environment_name: settings['env_name'],
+            environment_name: env_name,
             solution_stack_name: settings['solution_stack'],
             #option_settings: [{
             #  namespace: 'aws:autoscaling:launchconfiguration',
@@ -20,6 +20,10 @@ module Ebx
             #  option_value: 'ElasticBeanstalkProfile'
             #}]
           )
+
+          sqs = AWS::SQS.new
+          @queue =  sqs.queues.create(sqs_name)
+
         end
       rescue Exception
         raise $! # TODO
@@ -30,7 +34,7 @@ module Ebx
       begin
         if !describe[:environments].empty?
           environments = ElasticBeanstalk.instance.client.describe_environments({
-            environment_names: [settings['env_name']]
+            environment_names: [env_name]
           })[:environments]
 
           environments.each do |env|
@@ -48,8 +52,21 @@ module Ebx
 
     def describe
       ElasticBeanstalk.instance.client.describe_environments({
-        environment_names: [settings['env_name']]
-      })
+        environment_names: [env_name],
+        include_deleted: false
+      })[:environments][0].to_s
+    end
+
+    def sqs_name
+      "#{ENV['AWS_ENV']}-sns"
+    end
+
+    def env_name
+      "#{ENV['AWS_ENV']}-#{`git rev-parse --abbrev-ref HEAD`}".strip.gsub(/\s/, '-')[0..23]
+    end
+
+    def subscribe(notification_service)
+      notification_service.subscribe(queue)
     end
   end
 end
