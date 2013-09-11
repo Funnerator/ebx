@@ -61,7 +61,9 @@ module Ebx
 
         ElasticBeanstalk.instance.update_settings
         env = AwsEnvironment.new(env_settings)
-        say env.describe
+        env.describe.each do |env|
+          say env.to_s
+        end
       end
     end
 

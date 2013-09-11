@@ -8,7 +8,7 @@ module Ebx
 
     def create
       begin
-        if describe[:environments].empty?
+        if describe.empty?
           ElasticBeanstalk.instance.client.create_environment(
             application_name: settings['name'],
             version_label: settings['version'],
@@ -32,12 +32,8 @@ module Ebx
 
     def stop
       begin
-        if !describe[:environments].empty?
-          environments = ElasticBeanstalk.instance.client.describe_environments({
-            environment_names: [env_name]
-          })[:environments]
-
-          environments.each do |env|
+        if !describe.empty?
+          describe.each do |env|
             puts "Stopping #{env[:environment_name]} - #{env[:environment_id]}"
             ElasticBeanstalk.instance.client.terminate_environment({
               environment_id: env[:environment_id]
@@ -54,7 +50,7 @@ module Ebx
       ElasticBeanstalk.instance.client.describe_environments({
         environment_names: [env_name],
         include_deleted: false
-      })[:environments][0].to_s
+      })[:environments]
     end
 
     def sqs_name
