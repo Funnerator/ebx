@@ -10,8 +10,8 @@ class AwsEnvironment
       if describe[:environments].empty?
         ElasticBeanstalk.instance.client.create_environment(
           application_name: settings['name'],
-          version_label: version,
-          environment_name: name,
+          version_label: settings['version'],
+          environment_name: settings['env_name'],
           solution_stack_name: settings['solution_stack'],
           #option_settings: [{
           #  namespace: 'aws:autoscaling:launchconfiguration',
@@ -29,7 +29,7 @@ class AwsEnvironment
     begin
       if !describe[:environments].empty?
         environments = ElasticBeanstalk.instance.client.describe_environments({
-          environment_names: [name]
+          environment_names: [settings['env_name']]
         })[:environments]
 
         environments.each do |env|
@@ -45,17 +45,9 @@ class AwsEnvironment
     end
   end
 
-  def version
-    `git rev-parse HEAD`
-  end
-
-  def name
-    "#{ENV['AWS_ENV']}-#{`git rev-parse --abbrev-ref HEAD`}".strip.gsub(/\s/, '-')[0..23]
-  end
-
   def describe
     ElasticBeanstalk.instance.client.describe_environments({
-      environment_names: [name]
+      environment_names: [settings['env_name']]
     })
   end
 end

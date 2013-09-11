@@ -10,11 +10,11 @@ class AwsApplicationVersion
       if describe[:application_versions].empty?
         ElasticBeanstalk.instance.client.create_application_version(
           application_name: settings['name'],
-          version_label: version
-          #source_bundle: {
-          #  s3_bucket: settings[:source_bucket],
-          #  s3_key: settings[:source_key]
-          #}
+          version_label: settings['version'],
+          source_bundle: {
+            s3_bucket: settings['s3_bucket'],
+            s3_key: settings['s3_key']
+          }
         )
       end
     rescue Exception
@@ -25,11 +25,7 @@ class AwsApplicationVersion
   def describe
     ElasticBeanstalk.instance.client.describe_application_versions(
       application_name: settings['name'],
-      version_labels: [version]
+      version_labels: [settings['version']]
     )
-  end
-
-  def version
-    `git rev-parse HEAD`
   end
 end

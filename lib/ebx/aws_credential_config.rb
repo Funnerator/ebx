@@ -26,7 +26,8 @@ class AwsCredentialConfig
 
       AWS.config({
         access_key_id: secrets['AWSAccessKeyId'],
-        secret_access_key: secrets['AWSSecretKey']
+        secret_access_key: secrets['AWSSecretKey'],
+        dynamo_db: { api_version: '2012-08-10' }
       })
     end
   end
