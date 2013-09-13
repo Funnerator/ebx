@@ -18,6 +18,8 @@ module Ebx
       environments.each do |env_settings|
         AWS.config(region: env_settings['region'] || Ebx::DEFAULT_REGION)
 
+        AWS::DynomoDB.new
+
         ElasticBeanstalk.instance.update_settings
         AwsS3.instance.update_settings
 
@@ -67,9 +69,22 @@ module Ebx
       end
     end
 
-    def sns_name
-      "#{ENV['AWS_ENV']}-sns"
+    def logs
+      logs = environments.map do |env_settings|
+        env_settings = global_settings.merge(env_settings)
+        AWS.config(region: env_settings['region'] || Ebx::DEFAULT_REGION)
+        ElasticBeanstalk.instance.update_settings
+
+        ElasticBeanstalk.instance.client.describe_events(
+          application_name: env_settings['name']
+        ).events
+        binding.pry
+      end
+      binding.pry
     end
+
+    def sns_name
+      "#{ENV['AWS_ENV']}-sns" end
 
     def version
       `git rev-parse HEAD`.chomp!

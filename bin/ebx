@@ -110,6 +110,17 @@ command :stop do |c|
   end
 end
 
+command :log do |c|
+  c.syntax = 'ebx log [env] [options]'
+  c.summary = 'Retrieve logs cross region'
+  c.action do |args, options|
+    ENV['AWS_ENV'] ||= (args.shift || 'development')
+
+    Ebx::AwsCredentialConfig.set_credentials
+    Ebx::DeployGroup.new.logs
+  end
+end
+
 command :status do |c|
   c.action do |args, options|
     ENV['AWS_ENV'] ||= (args.shift || 'development')
