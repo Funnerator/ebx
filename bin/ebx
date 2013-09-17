@@ -41,22 +41,25 @@ end
 
 
 command :info do |c|
-  c.syntax = 'ebx info [options]'
-  c.summary = 'info about the current project'
+  c.syntax = 'ebx info [env] [options]'
+  c.summary = 'show project settings'
   c.option '--verbose', 'Show option settings'
 
   c.action do |args, options|
     config = Ebx::AwsEnvironmentConfig.read_config
-    base = config['base']
-    puts "        Name: #{base['name']}"
-    puts " Description: #{base['description']}"
-    puts "      App ID: #{base['app_id']}"
-    puts "       Stack: #{base['solution_stack']}"
-    puts "Environments: #{base['environments'].collect{|e| e['region']} }"
+    env_name = (args.shift || 'development')
+    env = config[env_name]
+
+    puts "  ====[#{env_name}]===="
+    puts "        Name: #{env['name']}"
+    puts " Description: #{env['description']}"
+    puts "      App ID: #{env['app_id']}"
+    puts "       Stack: #{env['solution_stack']}"
+    puts "     Regions: #{env['environments'].collect{|e| e['region']} }"
     puts ""
 
     if options.verbose
-      base['option_settings'].each do |ns, val|
+      env['option_settings'].each do |ns, val|
         puts "[#{ns}]"
         val.each do |k,v|
           puts "  #{k} : #{v}"
