@@ -123,8 +123,7 @@ end
 
 command :status do |c|
   c.action do |args, options|
-    ENV['AWS_ENV'] ||= (args.shift || 'development')
-    Ebx::AwsCredentialConfig.set_credentials
+    setup_env(args)
 
     Ebx::DeployGroup.new.describe
   end
@@ -136,11 +135,39 @@ command :shell do |c|
   c.summary = 'ssh to one of the ec2 machines in [env]'
 
   c.action do |args, options|
-    ENV['AWS_ENV'] ||= (args.shift || 'development')
+    setup_env(args)
+
     ec2_id = Ebx::DeployGroup.new.ec2_instance_ids.first
     dns_name = AWS::ec2.instances[ec2_id].dns_name
     puts "ssh ec2-user@#{dns_name}\n"
 
     system "ssh ec2-user@#{dns_name}"
   end
+end
+
+command :config do |c|
+  c.action do |args, options|
+    setup_env(args)
+    loc = parse_arg(args, 'local', ['local', 'remote'])
+
+    if loc == 'local'
+      #Kernel.exec 'cat eb/environment.yml'
+      a =  Ebx::AwsConfigTemplate.new({'name' => 'test_app'}).describe
+      binding.pry
+    end
+  end
+end
+
+def setup_env(args)
+  env = ENV['AWS_ENV'] = parse_arg(args, 'development')
+  say "Running in #{env} environment"
+  Ebx::AwsCredentialConfig.set_credentials
+end
+
+def parse_arg(args, default, possible_values=nil)
+  val = args.shift || default
+  if possible_values && !possible_values.include?(val)
+    raise "#{val} not included in (#{possible_values.join(", ")})"
+  end
+  val
 end

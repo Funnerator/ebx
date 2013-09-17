@@ -18,8 +18,6 @@ module Ebx
       environments.each do |env_settings|
         AWS.config(region: env_settings['region'] || Ebx::DEFAULT_REGION)
 
-        AWS::DynomoDB.new
-
         ElasticBeanstalk.instance.update_settings
         AwsS3.instance.update_settings
 
@@ -39,8 +37,12 @@ module Ebx
         ver = AwsApplicationVersion.new(env_settings)
         ver.create
 
+        conf = AwsConfigTemplate.new(env_settings)
+        conf.create
+
         env = AwsEnvironment.new(env_settings)
         env.create
+
         env.subscribe(notification_service)
       end
     end
@@ -78,9 +80,7 @@ module Ebx
         ElasticBeanstalk.instance.client.describe_events(
           application_name: env_settings['name']
         ).events
-        binding.pry
       end
-      binding.pry
     end
 
     def sns_name

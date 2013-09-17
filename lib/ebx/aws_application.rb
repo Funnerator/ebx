@@ -8,7 +8,7 @@ module Ebx
 
     def create
       begin
-        if describe[:applications].empty?
+        if !exists?
           ElasticBeanstalk.instance.client.create_application(
             application_name: settings['name'],
             description: settings['description']
@@ -19,10 +19,14 @@ module Ebx
       end
     end
 
+    def exists?
+      !!describe
+    end
+
     def describe
-      ElasticBeanstalk.instance.client.describe_applications(
+      AWS.elastic_beanstalk.client.describe_applications(
         application_names: [settings['name']]
-      )
+      ).data[:applications].first
     end
   end
 end

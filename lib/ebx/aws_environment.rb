@@ -7,28 +7,18 @@ module Ebx
     end
 
     def create
-      option_settings = []
-      settings['option_settings'].each do |ns, v|
-        v.each do |k,v|
-          val = { namespace: ns }
-          val['option_name'] = k
-          val['value'] = v
-          option_settings.push(val)
-        end
-      end unless settings['option_settings'].nil?
-
       begin
         if describe.empty?
           ElasticBeanstalk.instance.client.create_environment(
             application_name: settings['name'],
             version_label: settings['version'],
             environment_name: env_name,
-            solution_stack_name: settings['solution_stack'],
-            option_settings: option_settings
+            template_name: config_template_name
           )
+
+
         end
-        sqs = AWS::SQS.new
-        @queue =  sqs.queues.create(sqs_name)
+        @queue =  AWS.sqs.queues.create(sqs_name)
       rescue Exception
         raise $! # TODO
       end
@@ -63,6 +53,10 @@ module Ebx
 
     def env_name
       "#{ENV['AWS_ENV']}-#{`git rev-parse --abbrev-ref HEAD`}".strip.gsub(/\s/, '-')[0..23]
+    end
+
+    def config_template_name
+      "#{settings['name']}-#{ENV['AWS_ENV']}-template"
     end
 
     def subscribe(notification_service)
