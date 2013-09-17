@@ -1,6 +1,7 @@
 base: &base
   name: 'test_app'
   description: 'test desc'
+  app_id: '123456'
   solution_stack: '64bit Amazon Linux running Ruby 1.9.3'
 
   option_settings:

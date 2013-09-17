@@ -14,6 +14,7 @@ module Ebx
 
     def update_settings
       @s3 = AWS::S3.new
+      @settings = AwsEnvironmentConfig.read_config[ENV['AWS_ENV']]
     end
 
     def create_application_bucket
@@ -25,7 +26,7 @@ module Ebx
     end
 
     def application_bucket_name
-      "#{ENV['AWS_ENV']}-app-versions-#{AWS.config.region}"
+      "#{ENV['AWS_ENV']}-app-versions-#{AWS.config.region}-#{@settings['app_id']}"
     end
 
     def application_version_name(version)
