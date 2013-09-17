@@ -87,3 +87,18 @@ command :status do |c|
     Ebx::DeployGroup.new.describe
   end
 end
+
+
+command :shell do |c|
+  c.syntax = 'ebx shell [env]'
+  c.summary = 'ssh to one of the ec2 machines in [env]'
+
+  c.action do |args, options|
+    ENV['AWS_ENV'] ||= (args.shift || 'development')
+    ec2_id = Ebx::DeployGroup.new.ec2_instance_ids.first
+    dns_name = AWS::ec2.instances[ec2_id].dns_name
+    puts "ssh ec2-user@#{dns_name}\n"
+
+    system "ssh ec2-user@#{dns_name}"
+  end
+end

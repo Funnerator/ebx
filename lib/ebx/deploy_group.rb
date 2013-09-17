@@ -90,5 +90,17 @@ module Ebx
         env.stop
       end
     end
+
+    def ec2_instance_ids
+      env_settings = global_settings['environments'].first
+      AWS.config(region: env_settings['region'] || Ebx::DEFAULT_REGION)
+      ElasticBeanstalk.instance.update_settings
+
+      env_settings = global_settings.merge(env_settings)
+
+      env = AwsEnvironment.new(env_settings)
+      env.ec2_instance_ids
+    end
+
   end
 end

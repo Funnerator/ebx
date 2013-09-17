@@ -7,6 +7,16 @@ module Ebx
     end
 
     def create
+      option_settings = []
+      settings['option_settings'].each do |ns, v|
+        v.each do |k,v|
+          val = { namespace: ns }
+          val['option_name'] = k
+          val['value'] = v
+          option_settings.push(val)
+        end
+      end unless settings['option_settings'].nil?
+
       begin
         if describe.empty?
           ElasticBeanstalk.instance.client.create_environment(
@@ -14,17 +24,11 @@ module Ebx
             version_label: settings['version'],
             environment_name: env_name,
             solution_stack_name: settings['solution_stack'],
-            #option_settings: [{
-            #  namespace: 'aws:autoscaling:launchconfiguration',
-            #  option_name: 'IamInstanceProfile',
-            #  option_value: 'ElasticBeanstalkProfile'
-            #}]
+            option_settings: option_settings
           )
-
-          sqs = AWS::SQS.new
-          @queue =  sqs.queues.create(sqs_name)
-
         end
+        sqs = AWS::SQS.new
+        @queue =  sqs.queues.create(sqs_name)
       rescue Exception
         raise $! # TODO
       end
@@ -64,5 +68,16 @@ module Ebx
     def subscribe(notification_service)
       notification_service.subscribe(queue)
     end
+
+    def describe_resources
+      ElasticBeanstalk.instance.client.describe_environment_resources({
+        :environment_name => env_name
+      })[:environment_resources]
+    end
+
+    def ec2_instance_ids
+      describe_resources[:instances].collect{|i| i[:id]}
+    end
+
   end
 end
