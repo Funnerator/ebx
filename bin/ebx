@@ -8,34 +8,14 @@ require 'ebx'
 program :version, '0.0.1'
 program :description, 'eb eXtended'
 
-DEFAULT_ENV = ['production', 'development', 'staging', 'test']
- 
+global_option '-e ENVIRONMENT', String, 'Sets the AWS environment to run in'
+
 command :init do |c|
   c.syntax = 'ebx init [options]'
   c.summary = 'Init a new project'
- # c.description = 'test'
- # c.example 'description', 'command example'
- # c.option '--some-switch', 'Some switch that does something'
-  #
-  #
-  ##
-  #      queue.add(TryLoadEbConfigFileOperation(queue))
-  #      queue.add(ReadAwsCredentialFileOperation(queue))
-  #      queue.add(AskForConfigFileParameterOperation(queue))
-  #      queue.add(ValidateParameterOperation(queue))
-  #      queue.add(RotateOptionsettingFileOperation(queue))
-  #      queue.add(SanitizeBranchOperation(queue))
-  #      queue.add(UpdateAwsCredentialFileOperation(queue))
-  #      queue.add(SanitizeAppVersionNameOperation(queue))
-  #      queue.add(SaveEbConfigFileOperation(queue))
-  #      queue.add(UpdateDevToolsConfigOperation(queue))
-  #      queue.add(CheckGitIgnoreFileOperation(queue))
-  # 
+
   c.action do |args, options|
-    DEFAULT_ENV.each do |env|
-      ENV['AWS_ENV'] = env
-      Ebx::AwsEnvironmentConfig.init_config
-    end
+    Ebx::Settings.init_config
   end
 end
 
@@ -46,20 +26,18 @@ command :info do |c|
   c.option '--verbose', 'Show option settings'
 
   c.action do |args, options|
-    config = Ebx::AwsEnvironmentConfig.read_config
-    env_name = (args.shift || 'development')
-    env = config[env_name]
+    setup_env(options)
 
-    puts "  ====[#{env_name}]===="
-    puts "        Name: #{env['name']}"
-    puts " Description: #{env['description']}"
-    puts "      App ID: #{env['app_id']}"
-    puts "       Stack: #{env['solution_stack']}"
-    puts "     Regions: #{env['environments'].collect{|e| e['region']} }"
+    puts "  ====[#{Ebx.env}]===="
+    puts "        Name: #{Ebx::Settings.get(:name)}"
+    puts " Description: #{Ebx::Settings.get(:description)}"
+    puts "      App ID: #{Ebx::Settings.get(:app_id)}"
+    puts "       Stack: #{Ebx::Settings.get(:solution_stack)}"
+    puts "     Regions: #{Ebx::Settings.regions.join(', ') }"
     puts ""
 
     if options.verbose
-      env['option_settings'].each do |ns, val|
+      Settings.get(:options).each do |ns, val|
         puts "[#{ns}]"
         val.each do |k,v|
           puts "  #{k} : #{v}"
@@ -70,30 +48,13 @@ command :info do |c|
   end
 end
 
-
-#    elif command == CommandType.START:
-#        queue.add(CheckGitIgnoreFileOperation(queue))
-#        queue.add(LoadEbConfigFileOperation(queue))
-#        queue.add(ReadAwsCredentialFileOperation(queue))
-#        queue.add(TryGetCurrentBranchOperation(queue))
-#        queue.add(AskForMissiongParameterOperation(queue))
-#        queue.add(ValidateParameterOperation(queue))
-#        queue.add(CreateApplicationOperation(queue))
-#        queue.add(CreateApplicationVersionOperation(queue))
-#        queue.add(CreateEnvironmentOperation(queue))
-#        queue.add(SleepOperation(queue))
-#        queue.add(SaveConfigurationSettingOperation(queue))
-#        queue.add(WaitForCreateEnvironmentFinishOperation(queue))
-
-
 command :start do |c|
   c.syntax = 'ebx start [env] [options]'
   c.summary = 'Create an environment'
 
   c.action do |args, options|
-    ENV['AWS_ENV'] ||= (args.shift || 'development')
+    setup_env(options)
 
-    Ebx::AwsCredentialConfig.set_credentials
     Ebx::DeployGroup.new.create
   end
 end
@@ -103,18 +64,17 @@ command :stop do |c|
   c.summary = 'Stop a running environment'
 
   c.action do |args, options|
-    ENV['AWS_ENV'] ||= (args.shift || 'development')
+    setup_env(options)
 
-    Ebx::AwsCredentialConfig.set_credentials
     Ebx::DeployGroup.new.stop
   end
 end
 
-command :log do |c|
+command :logs do |c|
   c.syntax = 'ebx log [env] [options]'
   c.summary = 'Retrieve logs cross region'
   c.action do |args, options|
-    ENV['AWS_ENV'] ||= (args.shift || 'development')
+    setup_env(options)
 
     Ebx::AwsCredentialConfig.set_credentials
     Ebx::DeployGroup.new.logs
@@ -123,7 +83,8 @@ end
 
 command :status do |c|
   c.action do |args, options|
-    setup_env(args)
+    
+    setup_env(options)
 
     Ebx::DeployGroup.new.describe
   end
@@ -135,7 +96,7 @@ command :shell do |c|
   c.summary = 'ssh to one of the ec2 machines in [env]'
 
   c.action do |args, options|
-    setup_env(args)
+    setup_env(options)
 
     ec2_id = Ebx::DeployGroup.new.ec2_instance_ids.first
     dns_name = AWS::ec2.instances[ec2_id].dns_name
@@ -146,21 +107,29 @@ command :shell do |c|
 end
 
 command :config do |c|
-  c.action do |args, options|
-    setup_env(args)
-    loc = parse_arg(args, 'local', ['local', 'remote'])
+  c.syntax = 'ebx config <command> [-l=location]'
+  c.summary = ''
 
-    if loc == 'local'
-      #Kernel.exec 'cat eb/environment.yml'
-      a =  Ebx::AwsConfigTemplate.new({'name' => 'test_app'}).describe
-      binding.pry
+  c.action do |args, options|
+    setup_env(options)
+    cmd = parse_arg(args, nil)
+
+    if !cmd
+      puts c.syntax
+    end
+
+    case cmd
+    when 'pull'
+      Ebx::DeployGroup.new.pull_config_settings
+    when 'show'
+    when 'push'
     end
   end
 end
 
-def setup_env(args)
-  env = ENV['AWS_ENV'] = parse_arg(args, 'development')
-  say "Running in #{env} environment"
+def setup_env(options)
+  Ebx.env = options.e
+  say "Running in #{Ebx.env} environment"
   Ebx::AwsCredentialConfig.set_credentials
 end
 

@@ -1,53 +1,32 @@
+---
 base: &base
   name: 'test_app'
   description: 'test desc'
   app_id: '123456'
   solution_stack: '64bit Amazon Linux running Ruby 1.9.3'
 
-  option_settings:
-#    aws:autoscaling:asg:
-#      MaxSize: 4
-#      MinSize: 1
-
+  options:
     aws:autoscaling:launchconfiguration:
       EC2KeyName: 'id_rsa'
-      InstanceType: 't1.micro'
 
-#    aws:elasticbeanstalk:application:environment:
-#      BUNDLE_WITHOUT: 'test:development'
-#      RACK_ENV: production
-#      RAILS_SKIP_ASSET_COMPILATION: false
-#      RAILS_SKIP_MIGRATIONS: false
+  regions:
+    us-west-2:
+      options:
+        aws:elasticbeanstalk:application:environment:
+          PARAM1: 'a value'
+      
+    us-east-1:
 
-#    aws:elasticbeanstalk:hostmanager:
-#      LogPublicationControl: false
+environments:
+  production:
+    <<: *base
+    name: 'test_app_prod'
 
-#    aws:elasticbeanstalk:monitoring:
-#      'Automatically Terminate Unhealthy Instances': true
+  test:
+    <<: *base
 
-#    aws:elasticbeanstalk:sns:topics:
-#      'Notification Endpoint':
-#      'Notification Protocol': email
+  staging:
+    <<: *base
 
-#    aws:rds:dbinstance:
-#      DBDeletionPolicy: Delete
-#      DBEngine: mysql
-#      DBInstanceClass: 'db.t1.micro'
-#      DBSnapshotIdentifier:
-#      DBUser: ebroot
-
-  environments:
-    - region: 'us-west-2'
-    - region: 'us-east-1'
-
-production:
-  <<: *base
-
-test:
-  <<: *base
-
-staging:
-  <<: *base
-
-development:
-  <<: *base
+  development:
+    <<: *base

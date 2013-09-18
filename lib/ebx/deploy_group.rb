@@ -1,46 +1,25 @@
 module Ebx
   class DeployGroup
-    attr_accessor :global_settings
-
-    def initialize
-      @global_settings = AwsEnvironmentConfig.read_config[ENV['AWS_ENV']]
-    end
-
-    def environments
-      global_settings['environments']
-    end
 
     def create
-      global_settings.merge!(
-        'version' => version
-      )
+      Settings.regions.each do |region|
+        Ebx.set_region(region)
+        puts "Deploying to #{region}"
 
-      environments.each do |env_settings|
-        AWS.config(region: env_settings['region'] || Ebx::DEFAULT_REGION)
+        puts "Pushing application to S3"
+        s3 = AwsS3.new
+        s3.push_application_version
 
-        ElasticBeanstalk.instance.update_settings
-        AwsS3.instance.update_settings
-
-        env_settings = global_settings.merge(env_settings)
-
-        s3_bucket = AwsS3.instance.create_application_bucket
-        s3_key = AwsS3.instance.push_application_version(version)
-
-        env_settings.merge!({
-          's3_bucket' => s3_bucket,
-          's3_key' => s3_key
-        })
-
-        app = AwsApplication.new(env_settings)
+        app = AwsApplication.new
         app.create
 
-        ver = AwsApplicationVersion.new(env_settings)
+        ver = AwsApplicationVersion.new
         ver.create
 
-        conf = AwsConfigTemplate.new(env_settings)
+        conf = AwsConfigTemplate.new
         conf.create
 
-        env = AwsEnvironment.new(env_settings)
+        env = AwsEnvironment.new
         env.create
 
         env.subscribe(notification_service)
@@ -48,23 +27,20 @@ module Ebx
     end
 
     def notification_service
-      # Topic created for first environment
       @topic ||= begin
-        old_region = AWS.config.region
-        AWS.config(region: environments.first['region'] || Ebx::DEFAULT_REGION)
-        sns = AWS::SNS.new
-        sns.topics.create(sns_name)
+        old_region = Settings.region
+        Ebx.set_region(Settings.master_region)
+        AWS.sns.topics.create(Settings.get(:sns_name))
       end
     ensure
-      AWS.config(region: old_region)
+      Ebx.set_region(old_region)
     end
 
     def describe
-      environments.each do |env_settings|
-        AWS.config(region: env_settings['region'] || Ebx::DEFAULT_REGION)
+      Settings.regions.each do |region|
+        Ebx.set_region(region)
 
-        ElasticBeanstalk.instance.update_settings
-        env = AwsEnvironment.new(env_settings)
+        env = AwsEnvironment.new
         env.describe.each do |env|
           say env.to_s
         end
@@ -72,50 +48,86 @@ module Ebx
     end
 
     def logs
-      logs = environments.map do |env_settings|
-        env_settings = global_settings.merge(env_settings)
-        AWS.config(region: env_settings['region'] || Ebx::DEFAULT_REGION)
-        ElasticBeanstalk.instance.update_settings
+      Settings.regions.map do |region|
+        Ebx.set_region(region)
 
-        ElasticBeanstalk.instance.client.describe_events(
-          application_name: env_settings['name']
+        Aws.elastic_beanstalk.client.describe_events(
+          application_name: Settings.get(:name)
         ).events
       end
     end
 
-    def sns_name
-      "#{ENV['AWS_ENV']}-sns" end
+    def pull_config_settings
+      globals = nil
+      all_options = Settings.regions.map do |region|
+        Ebx.set_region(region)
 
-    def version
-      `git rev-parse HEAD`.chomp!
+        region_options = AwsConfigTemplate.new.pull_options
+        if !globals
+          globals = Marshal.load(Marshal.dump(region_options)) #TODO deep clone
+        else
+          globals = simple_global_compare(globals, region_options)
+        end
+
+        region_options
+      end
+
+      # clean up empty namespaces
+      globals.delete_if {|k,v| v.empty? }
+
+      all_options.map do |region_options|
+        # remove global settings
+      end
+
+      #if global_settings['options'] || !globals.empty?
+      #  if globals.empty?
+      #    global_settings['options'] = globals
+      #  else
+      #    global_settings.delete('options')
+      #  end
+      #end
+
+      all_options.each_with_index do |region_options, i|
+        if !region_options.empty?
+          regions[i]['options'] = region_options
+        end
+      end
+
+      AwsEnvironmentConfig.write_config
     end
 
-    def version_description
-      `git log --pretty=format:'%s - %an' -1`.chomp!
+    #TODO Deep compare of hashes
+    def simple_global_compare(hs1, hs2)
+      new_global = hs1.clone
+
+      hs1.keys.each do |namespace|
+        if !hs2[namespace]
+          new_global.delete(namespace) 
+          next
+        end
+
+        hs1[namespace].each do |name,val|
+          if !hs2[name] || hs2[name] != val
+            new_global[namespace].delete(name)
+          end
+        end
+      end
+
+      new_global
     end
 
     def stop
-      global_settings['environments'].each do |env_settings|
-        AWS.config(region: env_settings['region'] || Ebx::DEFAULT_REGION)
-        ElasticBeanstalk.instance.update_settings
+      Settings.regions.each do |region|
+        Ebx.set_region(region)
 
-        env_settings = global_settings.merge(env_settings)
-
-        env = AwsEnvironment.new(env_settings)
-        env.stop
+        AwsEnvironment.new.stop
       end
     end
 
     def ec2_instance_ids
-      env_settings = global_settings['environments'].first
-      AWS.config(region: env_settings['region'] || Ebx::DEFAULT_REGION)
-      ElasticBeanstalk.instance.update_settings
+      Ebx.set_region(Settings.master_region)
 
-      env_settings = global_settings.merge(env_settings)
-
-      env = AwsEnvironment.new(env_settings)
-      env.ec2_instance_ids
+      AwsEnvironment.new.ec2_instance_ids
     end
-
   end
 end

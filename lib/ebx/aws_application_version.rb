@@ -1,20 +1,16 @@
 module Ebx
   class AwsApplicationVersion
-    attr_accessor :settings
-
-    def initialize(settings)
-      @settings = settings
-    end
 
     def create
       begin
-        if describe[:application_versions].empty?
-          ElasticBeanstalk.instance.client.create_application_version(
-            application_name: settings['name'],
-            version_label: settings['version'],
+        if describe.empty?
+          puts "Creating version #{Settings.get(:version)}"
+          AWS.elastic_beanstalk.client.create_application_version(
+            application_name: Settings.get(:name),
+            version_label: Settings.get(:version),
             source_bundle: {
-              s3_bucket: settings['s3_bucket'],
-              s3_key: settings['s3_key']
+              s3_bucket: Settings.get(:s3_bucket),
+              s3_key: Settings.get(:s3_key)
             }
           )
         end
@@ -24,10 +20,10 @@ module Ebx
     end
 
     def describe
-      ElasticBeanstalk.instance.client.describe_application_versions(
-        application_name: settings['name'],
-        version_labels: [settings['version']]
-      )
+      AWS.elastic_beanstalk.client.describe_application_versions(
+        application_name: Settings.get(:name),
+        version_labels: [Settings.get(:version)]
+      )[:application_versions]
     end
   end
 end

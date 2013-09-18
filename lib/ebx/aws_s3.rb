@@ -2,46 +2,22 @@ require 'singleton'
 
 module Ebx
   class AwsS3
-    include Singleton
 
-    def initialize
-      update_settings
-    end
-
-    def client
-      @s3.client
-    end
-
-    def update_settings
-      @s3 = AWS::S3.new
-      @settings = AwsEnvironmentConfig.read_config[ENV['AWS_ENV']]
-    end
-
-    def create_application_bucket
-      application_bucket_name.tap do |n|
-        unless @s3.buckets[n].exists?
-          @s3.buckets.create(n)
-        end
+    def push_application_version
+      unless app_bucket.exists?
+        AWS.s3.buckets.create(Settings.get(:s3_bucket))
       end
-    end
 
-    def application_bucket_name
-      "#{ENV['AWS_ENV']}-app-versions-#{AWS.config.region}-#{@settings['app_id']}"
-    end
-
-    def application_version_name(version)
-      "git-#{version}"
-    end
-
-    def push_application_version(version)
-      @s3.buckets[application_bucket_name].objects[application_version_name(version)].tap do |o|
+      app_bucket.objects[Settings.get(:s3_key)].tap do |o|
         unless o.exists?
           zip = `git ls-tree -r --name-only HEAD | zip - -@`
           o.write(zip)
         end
       end
+    end
 
-      application_version_name(version)
+    def app_bucket
+      AWS.s3.buckets[Settings.get(:s3_bucket)]
     end
   end
 end

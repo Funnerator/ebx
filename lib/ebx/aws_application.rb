@@ -1,17 +1,13 @@
 module Ebx
   class AwsApplication
-    attr_accessor :settings
-
-    def initialize(settings)
-      @settings = settings
-    end
 
     def create
       begin
         if !exists?
-          ElasticBeanstalk.instance.client.create_application(
-            application_name: settings['name'],
-            description: settings['description']
+          puts "Creating application"
+          Aws.elastic_beanstalk.client.create_application(
+            application_name: Settings.get(:name),
+            description: Settings.get(:name)
           )
         end
       rescue Exception
@@ -25,7 +21,7 @@ module Ebx
 
     def describe
       AWS.elastic_beanstalk.client.describe_applications(
-        application_names: [settings['name']]
+        application_names: [Settings.get(:name)]
       ).data[:applications].first
     end
   end
