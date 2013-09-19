@@ -115,7 +115,7 @@ command :config do |c|
     when 'pull'
       Ebx::DeployGroup.new.pull_config_settings
     when 'show'
-      Ebx::DeployGroup.new.print_config
+      puts Ebx::DeployGroup.new.config
     when 'push'
     end
   end

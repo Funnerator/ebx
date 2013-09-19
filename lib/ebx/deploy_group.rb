@@ -66,12 +66,8 @@ module Ebx
       Settings.write_config
     end
 
-    def print_config
-      Settings.regions.each do |region|
-        Ebx.set_region(region)
-
-        puts Settings.config
-      end
+    def config
+      Settings.config.to_yaml
     end
 
     def stop
