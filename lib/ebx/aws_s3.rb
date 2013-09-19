@@ -10,7 +10,8 @@ module Ebx
 
       app_bucket.objects[Settings.get(:s3_key)].tap do |o|
         unless o.exists?
-          zip = `git ls-tree -r --name-only HEAD | zip - -@`
+          puts 'Bundling project'
+          zip = `git ls-tree -r --name-only HEAD | zip - -q -@`
           o.write(zip)
         end
       end
