@@ -44,13 +44,16 @@ module Ebx
       end
     end
 
-    def logs
+    def logs(follow = false)
+      logs = "/var/log/eb* /var/app/support/logs/* /var/log/cfn*"
       Settings.regions.map do |region|
         Ebx.set_region(region)
 
-        Aws.elastic_beanstalk.client.describe_events(
-          application_name: Settings.get(:name)
-        ).events
+        if follow
+          remote_execute("tail -f #{logs}", true)
+        else
+          remote_execute("tail #{logs}")
+        end
       end
     end
 
@@ -84,6 +87,24 @@ module Ebx
       Ebx.set_region(Settings.master_region)
 
       AwsEnvironment.new.ec2_instance_ids
+    end
+
+    def remote_shell
+      ec2_id = ec2_instance_ids.first
+      dns_name = AWS.ec2.instances[ec2_id].dns_name
+      puts "ssh ec2-user@#{dns_name}\n"
+
+      system "ssh ec2-user@#{dns_name}"
+    end
+
+    def remote_execute(cmd, subproccess = false)
+      ec2_id = AwsEnvironment.new.ec2_instance_ids.first
+      dns_name = AWS.ec2.instances[ec2_id].dns_name
+      if subprocess
+        system "ssh ec2-user@#{dns_name} #{cmd}"
+      else
+        `ssh ec2-user@#{dns_name} #{cmd}`
+      end
     end
   end
 end

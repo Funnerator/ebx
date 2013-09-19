@@ -95,16 +95,12 @@ command :shell do |c|
   c.action do |args, options|
     setup_env(options)
 
-    ec2_id = Ebx::DeployGroup.new.ec2_instance_ids.first
-    dns_name = AWS.ec2.instances[ec2_id].dns_name
-    puts "ssh ec2-user@#{dns_name}\n"
-
-    system "ssh ec2-user@#{dns_name}"
+    Ebx::DeployGroup.new.remote_shell
   end
 end
 
 command :config do |c|
-  c.syntax = 'ebx config <command> [-l=location]'
+  c.syntax = 'ebx config <command>'
   c.summary = ''
 
   c.action do |args, options|
