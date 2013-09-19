@@ -84,6 +84,14 @@ module Ebx
       end
     end
 
+    def delete_application
+      Settings.regions.each do |region|
+        Ebx.set_region(region)
+
+        AwsApplication.new.delete
+      end
+    end
+
     def ec2_instance_ids
       Ebx.set_region(Settings.master_region)
 

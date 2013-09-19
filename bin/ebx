@@ -119,6 +119,16 @@ command :config do |c|
   end
 end
 
+command :delete do |c|
+  c.syntax = 'ebx delete'
+  c.summary = 'delete application'
+
+  c.action do |args, options|
+    setup_env(options)
+    Ebx::DeployGroup.new.delete_application
+  end
+end
+
 def setup_env(options)
   Ebx.env = options.e
   Ebx.regions = options.r ? [options.r] : nil

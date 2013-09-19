@@ -24,5 +24,12 @@ module Ebx
         application_names: [Settings.get(:name)]
       ).data[:applications].first
     end
+
+    def delete
+      AWS.elastic_beanstalk.client.delete_application(
+        application_name: Settings.get(:name)
+      )
+      puts "Deleted #{Settings.get(:name)} in #{Ebx.region}"
+    end
   end
 end
