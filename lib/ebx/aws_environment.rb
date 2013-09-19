@@ -44,18 +44,30 @@ module Ebx
 
     def to_s(verbose = false)
       desc = describe.first
+
+      str = "#{Ebx.region} | #{Settings.get(:environment_name)} | #{colorize(desc[:status])} | #{colorize(desc[:health])} | #{desc[:endpoint_url]}\n"
+
       if verbose
-        "be verbose"
-      else
-        "#{Ebx.region} | #{Settings.get(:environment_name)} | #{colorize(desc[:status])} | #{colorize(desc[:health])} | #{desc[:endpoint_url]}\n"
+        str << "Events in the last hour: \n"
+
+        events = AWS.elastic_beanstalk.client.describe_events({
+          environment_name: Settings.get(:environment_name),
+          start_time: (Time.now - 60*60*24).iso8601
+        })[:events].each do |evt|
+          str << "#{colorize(evt[:severity])} #{evt[:event_date]} #{evt[:message]}\n"
+        end
       end
+
+      str
     end
 
     def colorize(str)
       case str
-      when 'Red'
+      when 'Red', 'ERROR', 'FATAL'
         str.color(:red)
-      when 'Ready', 'Green'
+      when 'WARN'
+        str.color(:yellow)
+      when 'Ready', 'Green', 'INFO'
         str.color(:green)
       end
     end

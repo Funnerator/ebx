@@ -88,7 +88,6 @@ command :status do |c|
   end
 end
 
-
 command :shell do |c|
   c.syntax = 'ebx shell [env]'
   c.summary = 'ssh to one of the ec2 machines in [env]'
@@ -97,7 +96,7 @@ command :shell do |c|
     setup_env(options)
 
     ec2_id = Ebx::DeployGroup.new.ec2_instance_ids.first
-    dns_name = AWS::ec2.instances[ec2_id].dns_name
+    dns_name = AWS.ec2.instances[ec2_id].dns_name
     puts "ssh ec2-user@#{dns_name}\n"
 
     system "ssh ec2-user@#{dns_name}"
