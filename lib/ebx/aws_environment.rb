@@ -43,9 +43,9 @@ module Ebx
     end
 
     def to_s(verbose = false)
-      desc = describe.first
+      desc = describe.first || {:status => 'not running', :health => 'off', :endpoint_url => 'none'}
 
-      str = "#{Ebx.region} | #{Settings.get(:environment_name)} | #{colorize((desc && desc[:status]) || 'not running')} | #{colorize((desc && desc[:health]) || 'off')} | #{(desc && desc[:endpoint_url]) || 'na'}\n"
+      str = "#{Ebx.region} | #{Settings.get(:environment_name)} | #{colorize(desc[:status])} | #{colorize(desc[:health])} | #{desc[:endpoint_url]}\n"
 
       if verbose
         str << "Events in the last hour: \n"
