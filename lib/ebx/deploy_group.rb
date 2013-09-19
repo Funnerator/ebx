@@ -67,7 +67,9 @@ module Ebx
     end
 
     def config
-      Settings.config.to_yaml
+      Settings.regions.map do |region|
+        {}.tap {|h| h[region] = Settings.config[region] }.to_yaml
+      end
     end
 
     def stop
