@@ -1,5 +1,6 @@
 require 'aws'
 require 'pry'
+require 'rainbow'
 
 require 'ebx/version'
 require 'ebx/aws_credential_config'
@@ -13,6 +14,7 @@ require 'ebx/deploy_group'
 require 'ebx/version'
 
 require 'ebx/core_ext/hash/deep_merge'
+require 'ebx/core_ext/hash/deep_dup'
 
 module Ebx
   extend self
@@ -31,5 +33,9 @@ module Ebx
 
   def set_region(region)
     AWS.config(region: region) 
+  end
+
+  def region
+    AWS.config.region
   end
 end

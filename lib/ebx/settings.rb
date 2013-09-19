@@ -38,6 +38,10 @@ module Ebx
       raise "Region #{region} not defined in #{config_path}"
     end
 
+    def set(attr, value)
+      config[region][attr.to_s] = value
+    end
+
     def init_config
       create_dir('.ebextentions')
       create_dir('eb')
@@ -51,10 +55,55 @@ module Ebx
       create_dir('.ebextentions')
       create_dir('eb')
 
-      File.open(Ebx.config_path, 'w') {|f| f.write(Ebx.config.to_yaml)}
+      #to_yaml = extract_globals
+     
+      File.open(Ebx.config_path, 'w') {|f| f.write(config.to_yaml)}
     end
 
     private
+
+    def extract_globals
+      to_yaml = config.deep_dup
+
+      globals = to_yaml[master_region]['options'].deep_dup
+      to_yaml.each do |region|
+        # Remove non-matched options in globals
+        globals.each do |namespace, (name, val)|
+          if !val_eql?(val, region[namespace].try(:[], name))
+            if globals[namespace].size == 1
+              globals.delete(namespace)
+            else 
+              globals[namespace].delete(name)
+            end
+          end
+        end
+      end
+
+      # Remove globals from regions
+      to_yaml.each do |region|
+        globals.each do |namespace, (name, val)|
+          if val_eql?(val, region[namespace].try(:[], name))
+            if region[namespace].size == 1
+              region.delete(namespace)
+            else
+              region[namespace].delete(name)
+            end
+          end
+        end
+      end
+    end
+
+    def val_eql?(val1, val2)
+      case val1
+      when Array
+        return false if val1.size != val2.size
+        val1.zip(val2).inject(true) {|b, (v1, v2)| b && val_eql?(v1,v2) }
+      when Hash
+        val1.inject(true) { |b, (k,v)| b && val_eql?(v, val2[k]) }
+      else
+        val1 == val2
+      end
+    end
 
     def generated_names(settings)
       {

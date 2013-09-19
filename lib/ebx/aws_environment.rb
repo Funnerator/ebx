@@ -42,6 +42,20 @@ module Ebx
       })[:environments]
     end
 
+    def to_s
+      desc = describe.first
+      "#{Ebx.region} | #{Settings.get(:environment_name)} | #{colorize(desc[:status])} | #{colorize(desc[:health])} | #{desc[:endpoint_url]}\n"
+    end
+
+    def colorize(str)
+      case str
+      when 'Red'
+        str.color(:red)
+      when 'Ready', 'Green'
+        str.color(:green)
+      end
+    end
+
     def subscribe(notification_service)
       puts "subscribing to notification service"
       notification_service.subscribe(queue)

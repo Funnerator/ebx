@@ -40,10 +40,7 @@ module Ebx
       Settings.regions.each do |region|
         Ebx.set_region(region)
 
-        env = AwsEnvironment.new
-        env.describe.each do |env|
-          say env.to_s
-        end
+        say AwsEnvironment.new.to_s
       end
     end
 
@@ -58,62 +55,23 @@ module Ebx
     end
 
     def pull_config_settings
-      globals = nil
-      all_options = Settings.regions.map do |region|
+      Settings.regions.each do |region|
         Ebx.set_region(region)
 
         region_options = AwsConfigTemplate.new.pull_options
-        if !globals
-          globals = Marshal.load(Marshal.dump(region_options)) #TODO deep clone
-        else
-          globals = simple_global_compare(globals, region_options)
-        end
-
-        region_options
+        Settings.set(:options, region_options)
       end
 
-      # clean up empty namespaces
-      globals.delete_if {|k,v| v.empty? }
-
-      all_options.map do |region_options|
-        # remove global settings
-      end
-
-      #if global_settings['options'] || !globals.empty?
-      #  if globals.empty?
-      #    global_settings['options'] = globals
-      #  else
-      #    global_settings.delete('options')
-      #  end
-      #end
-
-      all_options.each_with_index do |region_options, i|
-        if !region_options.empty?
-          regions[i]['options'] = region_options
-        end
-      end
-
-      AwsEnvironmentConfig.write_config
+      puts "Writing remote config to #{Ebx.config_path}"
+      Settings.write_config
     end
 
-    #TODO Deep compare of hashes
-    def simple_global_compare(hs1, hs2)
-      new_global = hs1.clone
+    def print_config
+      Settings.regions.each do |region|
+        Ebx.set_region(region)
 
-      hs1.keys.each do |namespace|
-        if !hs2[namespace]
-          new_global.delete(namespace) 
-          next
-        end
-
-        hs1[namespace].each do |name,val|
-          if !hs2[name] || hs2[name] != val
-            new_global[namespace].delete(name)
-          end
-        end
+        puts Settings.config
       end
-
-      new_global
     end
 
     def stop

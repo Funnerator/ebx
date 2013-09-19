@@ -112,16 +112,13 @@ command :config do |c|
 
   c.action do |args, options|
     setup_env(options)
-    cmd = parse_arg(args, nil)
-
-    if !cmd
-      puts c.syntax
-    end
+    cmd = parse_arg(args, 'show')
 
     case cmd
     when 'pull'
       Ebx::DeployGroup.new.pull_config_settings
     when 'show'
+      Ebx::DeployGroup.new.print_config
     when 'push'
     end
   end
