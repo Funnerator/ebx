@@ -1,14 +1,14 @@
 #!/usr/bin/env ruby
 
-require 'rubygems'
 require 'commander/import'
-
 require 'ebx'
 
-program :version, '0.0.1'
+program :version, Ebx::VERSION
 program :description, 'eb eXtended'
 
 global_option '-e ENVIRONMENT', String, 'Sets the AWS environment to run in'
+global_option '-r REGION', String, 'Sets the AWS region to run in'
+global_option '--verbose', 'be wordy'
 
 command :init do |c|
   c.syntax = 'ebx init [options]'
@@ -23,7 +23,6 @@ end
 command :info do |c|
   c.syntax = 'ebx info [env] [options]'
   c.summary = 'show project settings'
-  c.option '--verbose', 'Show option settings'
 
   c.action do |args, options|
     setup_env(options)
@@ -72,7 +71,7 @@ end
 
 command :logs do |c|
   c.syntax = 'ebx log [env] [options]'
-  c.summary = 'Retrieve logs cross region'
+  c.summary = 'Retrieve logs'
   c.action do |args, options|
     setup_env(options)
 
@@ -83,10 +82,9 @@ end
 
 command :status do |c|
   c.action do |args, options|
-    
     setup_env(options)
 
-    Ebx::DeployGroup.new.describe
+    Ebx::DeployGroup.new.describe(options.verbose)
   end
 end
 
@@ -126,6 +124,7 @@ end
 
 def setup_env(options)
   Ebx.env = options.e
+  Ebx.regions = options.r ? [options.r] : nil
   say "Running in #{Ebx.env} environment"
   Ebx::AwsCredentialConfig.set_credentials
 end

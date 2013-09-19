@@ -19,7 +19,7 @@ require 'ebx/core_ext/hash/deep_dup'
 module Ebx
   extend self
 
-  attr_accessor :config_path, :env
+  attr_accessor :config_path, :env, :regions
 
   DEFAULT_ENV = 'development'
 

@@ -25,7 +25,7 @@ module Ebx
     end
 
     def regions
-      config.keys
+      Ebx.regions || config.keys
     end
 
     def master_region
@@ -35,7 +35,7 @@ module Ebx
     def get(attr)
       config[region][attr.to_s]
     rescue NoMethodError
-      raise "Region #{region} not defined in #{config_path}"
+      raise "Region #{region} not defined in #{Ebx.config_path}"
     end
 
     def set(attr, value)

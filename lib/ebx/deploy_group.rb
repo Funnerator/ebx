@@ -36,11 +36,11 @@ module Ebx
       Ebx.set_region(old_region)
     end
 
-    def describe
+    def describe(verbose = false)
       Settings.regions.each do |region|
         Ebx.set_region(region)
 
-        say AwsEnvironment.new.to_s
+        say AwsEnvironment.new.to_s(verbose)
       end
     end
 

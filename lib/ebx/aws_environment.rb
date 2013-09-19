@@ -42,9 +42,13 @@ module Ebx
       })[:environments]
     end
 
-    def to_s
+    def to_s(verbose = false)
       desc = describe.first
-      "#{Ebx.region} | #{Settings.get(:environment_name)} | #{colorize(desc[:status])} | #{colorize(desc[:health])} | #{desc[:endpoint_url]}\n"
+      if verbose
+        "be verbose"
+      else
+        "#{Ebx.region} | #{Settings.get(:environment_name)} | #{colorize(desc[:status])} | #{colorize(desc[:health])} | #{desc[:endpoint_url]}\n"
+      end
     end
 
     def colorize(str)
