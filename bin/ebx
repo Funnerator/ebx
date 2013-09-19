@@ -72,11 +72,13 @@ end
 command :logs do |c|
   c.syntax = 'ebx log [env] [options]'
   c.summary = 'Retrieve logs'
+  c.option '-f', 'follow logs'
+
   c.action do |args, options|
     setup_env(options)
 
     Ebx::AwsCredentialConfig.set_credentials
-    Ebx::DeployGroup.new.logs
+    puts Ebx::DeployGroup.new.logs(options.f)
   end
 end
 

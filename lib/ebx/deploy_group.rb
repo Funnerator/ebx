@@ -45,7 +45,8 @@ module Ebx
     end
 
     def logs(follow = false)
-      logs = "/var/log/eb* /var/app/support/logs/* /var/log/cfn*"
+      logs = "/var/log/eb* /var/log/cfn*"
+      # /var/app/support/logs/* 
       Settings.regions.map do |region|
         Ebx.set_region(region)
 
@@ -97,8 +98,12 @@ module Ebx
       system "ssh ec2-user@#{dns_name}"
     end
 
-    def remote_execute(cmd, subproccess = false)
+    def remote_execute(cmd, subprocess = false)
       ec2_id = AwsEnvironment.new.ec2_instance_ids.first
+      if !ec2_id
+        puts "No active ec2 instances found for #{Settings.get(:environment_name)}"
+        return
+      end
       dns_name = AWS.ec2.instances[ec2_id].dns_name
       if subprocess
         system "ssh ec2-user@#{dns_name} #{cmd}"
