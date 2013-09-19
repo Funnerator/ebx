@@ -5,7 +5,7 @@ module Ebx
       begin
         if !exists?
           puts "Creating application"
-          Aws.elastic_beanstalk.client.create_application(
+          AWS.elastic_beanstalk.client.create_application(
             application_name: Settings.get(:name),
             description: Settings.get(:name)
           )

@@ -70,7 +70,7 @@ module Ebx
       when 'Ready', 'Green', 'INFO'
         str.color(:green)
       else
-        str
+        str.color(:white)
       end
     end
 
