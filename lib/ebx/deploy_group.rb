@@ -51,7 +51,7 @@ module Ebx
         Ebx.set_region(region)
 
         if follow
-          remote_execute("tail -f #{logs}", true)
+          remote_execute("tail -f -n 0 #{logs}", true)
         else
           remote_execute("tail #{logs}")
         end
