@@ -6,8 +6,8 @@ require 'ebx'
 program :version, Ebx::VERSION
 program :description, 'eb eXtended'
 
-global_option '-e ENVIRONMENT', String, 'Sets the AWS environment to run in'
-global_option '-r REGION', String, 'Sets the AWS region to run in'
+global_option '-e ENVIRONMENT', String, 'Sets the AWS environment to run in (Default is development)'
+global_option '-r REGION', String, 'Sets the AWS region to run in (Default is all regions)'
 global_option '--verbose', 'be wordy'
 
 command :init do |c|
@@ -83,6 +83,8 @@ command :logs do |c|
 end
 
 command :status do |c|
+  c.syntax = 'ebx status'
+  c.summary = 'current EB environment status'
   c.action do |args, options|
     setup_env(options)
 
@@ -103,7 +105,7 @@ end
 
 command :config do |c|
   c.syntax = 'ebx config <command>'
-  c.summary = ''
+  c.summary = 'access modify and push an EB config'
 
   c.action do |args, options|
     setup_env(options)
