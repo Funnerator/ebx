@@ -7,10 +7,7 @@ module Ebx
         if describe.empty?
           puts 'Creating environment'
           AWS.elastic_beanstalk.client.create_environment(
-            application_name: Settings.get(:name),
-            version_label: Settings.get(:version),
-            environment_name: Settings.get(:environment_name),
-            template_name: Settings.get(:template_name)
+            Settings.aws_params(:name, :version, :environment_name, :template_name)
           )
         end
 
@@ -36,10 +33,12 @@ module Ebx
     end
 
     def describe
-      AWS.elastic_beanstalk.client.describe_environments({
+      aws_desc = AWS.elastic_beanstalk.client.describe_environments({
         environment_names: [Settings.get(:environment_name)],
         include_deleted: false
-      })[:environments]
+      })[:environments].first
+
+      Settings.aws_settings_to_ebx(:environment, aws_desc)
     end
 
     def to_s(verbose = false)

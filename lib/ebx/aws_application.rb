@@ -6,8 +6,7 @@ module Ebx
         if !exists?
           puts "Creating application"
           AWS.elastic_beanstalk.client.create_application(
-            application_name: Settings.get(:name),
-            description: Settings.get(:name)
+            Settings.aws_params(:name, :description)
           )
         end
       rescue Exception
@@ -20,14 +19,16 @@ module Ebx
     end
 
     def describe
-      AWS.elastic_beanstalk.client.describe_applications(
+      aws_desc = AWS.elastic_beanstalk.client.describe_applications(
         application_names: [Settings.get(:name)]
       ).data[:applications].first
+
+      Settings.aws_settings_to_ebx(:application, aws_desc)
     end
 
     def delete
       AWS.elastic_beanstalk.client.delete_application(
-        application_name: Settings.get(:name)
+        Setting.aws_params(:name)
       )
       puts "Deleted #{Settings.get(:name)} in #{Ebx.region}"
     end

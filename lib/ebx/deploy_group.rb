@@ -2,8 +2,7 @@ module Ebx
   class DeployGroup
 
     def create
-      Settings.regions.each do |region|
-        Ebx.set_region(region)
+      each_region do |region|
         puts "Deploying to #{region}"
 
         puts "Pushing application to S3"
@@ -37,9 +36,7 @@ module Ebx
     end
 
     def describe(verbose = false)
-      Settings.regions.each do |region|
-        Ebx.set_region(region)
-
+      each_region do |region|
         say AwsEnvironment.new.to_s(verbose)
       end
     end
@@ -47,8 +44,7 @@ module Ebx
     def logs(follow = false)
       logs = "/var/log/eb* /var/log/cfn*"
       # /var/app/support/logs/* 
-      Settings.regions.map do |region|
-        Ebx.set_region(region)
+      each_region do |region|
 
         if follow
           remote_execute("tail -f -n 0 #{logs}", true)
@@ -58,10 +54,9 @@ module Ebx
       end
     end
 
+    # TODO Does not work yet
     def pull_config_settings
-      Settings.regions.each do |region|
-        Ebx.set_region(region)
-
+      each_region do |region|
         region_options = AwsConfigTemplate.new.pull_options
         Settings.set(:options, region_options)
       end
@@ -70,24 +65,38 @@ module Ebx
       Settings.write_config
     end
 
-    def config
-      Settings.regions.map do |region|
-        {}.tap {|h| h[region] = Settings.config[region] }.to_yaml
+    def settings_diff
+      each_region do |region|
+        Settings.remote_diff
       end
     end
 
-    def stop
-      Settings.regions.each do |region|
-        Ebx.set_region(region)
+    def push_config_settings
+      each_region do |region|
+      end
+    end
 
+    def settings(where = 'local')
+      s = []
+      each_region do |region|
+        if where == 'local'
+          s << { "#{region}" => Settings.config[region] }.to_yaml
+        elsif where == 'remote'
+          s << { "#{region}" => Settings.remote }.to_yaml
+        end
+      end
+
+      s
+    end
+
+    def stop
+      each_region do |region|
         AwsEnvironment.new.stop
       end
     end
 
     def delete_application
-      Settings.regions.each do |region|
-        Ebx.set_region(region)
-
+      each_region do |region|
         AwsApplication.new.delete
       end
     end
@@ -117,6 +126,13 @@ module Ebx
         system "ssh ec2-user@#{dns_name} #{cmd}"
       else
         `ssh ec2-user@#{dns_name} #{cmd}`
+      end
+    end
+
+    def each_region(regions = Settings.regions, &block)
+      regions.each do |region|
+        Ebx.set_region(region)
+        yield region
       end
     end
   end

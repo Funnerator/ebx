@@ -3,15 +3,10 @@ module Ebx
 
     def create
       begin
-        if describe.empty?
+        if exists?
           puts "Creating version #{Settings.get(:version)}"
           AWS.elastic_beanstalk.client.create_application_version(
-            application_name: Settings.get(:name),
-            version_label: Settings.get(:version),
-            source_bundle: {
-              s3_bucket: Settings.get(:s3_bucket),
-              s3_key: Settings.get(:s3_key)
-            }
+            Settings.aws_params(:name, :version, :s3_bucket, :s3_key)
           )
         end
       rescue Exception
@@ -19,11 +14,17 @@ module Ebx
       end
     end
 
+    def exists?
+      !!describe
+    end
+
     def describe
-      AWS.elastic_beanstalk.client.describe_application_versions(
+      aws_desc = AWS.elastic_beanstalk.client.describe_application_versions(
         application_name: Settings.get(:name),
         version_labels: [Settings.get(:version)]
-      )[:application_versions]
+      )[:application_versions].first
+
+      Settings.aws_settings_to_ebx(:application_version, aws_desc)
     end
   end
 end

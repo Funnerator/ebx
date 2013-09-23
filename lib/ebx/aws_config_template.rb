@@ -25,17 +25,12 @@ module Ebx
         template = if !app[:configuration_templates].include?(Settings.get(:template_name))
           puts "Creating configuration template"
           AWS.elastic_beanstalk.client.create_configuration_template(
-            application_name: Settings.get(:name),
-            template_name: Settings.get(:template_name),
-            solution_stack_name: Settings.get(:solution_stack),
-            option_settings: option_settings
+            Settings.aws_params(:name, :template_name, :solution_stack, :options)
           )
         else
           puts "Updating configuration template"
           AWS.elastic_beanstalk.client.update_configuration_template(
-            application_name: Settings.get(:name),
-            template_name: Settings.get(:template_name),
-            option_settings: option_settings
+            Settings.aws_params(:name, :template_name, :options)
           )
         end
       rescue Exception
@@ -44,10 +39,29 @@ module Ebx
     end
 
     def describe
-      @describe ||= AWS.elastic_beanstalk.client.describe_configuration_settings(
-        application_name: Settings.get(:name),
-        template_name: Settings.get(:template_name),
-      )[:configuration_settings][0][:option_settings]
+      @description = begin
+        aws_desc = AWS.elastic_beanstalk.client.describe_configuration_settings(
+          application_name: Settings.get(:name),
+          template_name: Settings.get(:template_name),
+        )[:configuration_settings].first
+
+        option_hash = {}
+        aws_desc[:option_settings].group_by {|h| h[:namespace] }.each do |namespace, h|
+          h.each do |setting|
+            option = options.find {|o| o[:namespace] == namespace && o[:name] == setting[:option_name] }
+
+            # TODO overinclusive
+            if !option || setting[:value] != option[:default_value]
+              (option_hash[namespace] ||= {}).tap do |oh|
+                oh.store(setting[:option_name], setting[:value])
+              end
+            end
+          end
+        end
+        aws_desc[:option_settings] = option_hash
+
+        Settings.aws_settings_to_ebx(:environment_template, aws_desc)
+      end
     end
 
     def options
@@ -58,20 +72,7 @@ module Ebx
     end
 
     def pull_options
-      option_hash = {}
-      describe.group_by {|h| h[:namespace] }.each do |namespace, h|
-        h.each do |setting|
-          option = options.find {|o| o[:namespace] == namespace && o[:name] == setting[:option_name] }
-
-          # TODO overinclusive
-          if !option || setting[:value] != option[:default_value]
-            (option_hash[namespace] ||= {}).tap do |oh|
-              oh.store(setting[:option_name], setting[:value])
-            end
-          end
-        end
-      end
-      option_hash
+      describe[:options]
     end
   end
 end

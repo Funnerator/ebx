@@ -114,9 +114,13 @@ command :config do |c|
     case cmd
     when 'pull'
       Ebx::DeployGroup.new.pull_config_settings
-    when 'show'
-      puts Ebx::DeployGroup.new.config
     when 'push'
+      Ebx::DeployGroup.new.push_config_settings
+    when 'diff'
+      Ebx::DeployGroup.new.settings_diff
+    when 'show'
+      where = parse_arg(args, 'local', ['local', 'remote'])
+      puts Ebx::DeployGroup.new.settings(where)
     end
   end
 end
