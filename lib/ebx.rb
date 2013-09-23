@@ -15,6 +15,7 @@ require 'ebx/version'
 
 require 'ebx/core_ext/hash/deep_merge'
 require 'ebx/core_ext/hash/deep_dup'
+require 'ebx/core_ext/hash/keys'
 
 module Ebx
   extend self

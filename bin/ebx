@@ -117,7 +117,7 @@ command :config do |c|
     when 'push'
       Ebx::DeployGroup.new.push_config_settings
     when 'diff'
-      Ebx::DeployGroup.new.settings_diff
+      puts Ebx::DeployGroup.new.settings_diff
     when 'show'
       where = parse_arg(args, 'local', ['local', 'remote'])
       puts Ebx::DeployGroup.new.settings(where)

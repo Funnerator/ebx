@@ -19,12 +19,14 @@ module Ebx
     end
 
     def describe
-      aws_desc = AWS.elastic_beanstalk.client.describe_application_versions(
-        application_name: Settings.get(:name),
-        version_labels: [Settings.get(:version)]
-      )[:application_versions].first
+      @description ||= begin
+        aws_desc = AWS.elastic_beanstalk.client.describe_application_versions(
+          application_name: Settings.get(:name),
+          version_labels: [Settings.get(:version)]
+        )[:application_versions].first
 
-      Settings.aws_settings_to_ebx(:application_version, aws_desc)
+        Settings.aws_settings_to_ebx(:application_version, aws_desc)
+      end
     end
   end
 end

@@ -111,11 +111,33 @@ module Ebx
         AwsEnvironment.new.config,
         AwsConfigTemplate.new.describe
       ]
-      descriptions.reduce({}) {|h, d| h.deep_merge(d) }
+      descriptions.reduce({}) {|h, d| h.deep_merge(d) }.stringify_keys!
     end
 
     def remote_diff
-      remote
+      diff = {
+        add: [],
+        modify: [],
+        delete: []
+      }
+
+      local = config[Ebx.region].clone
+      remote.each do |k, v|
+        if local[k]
+          if local[k] != v
+            diff[:modify] << { "#{k}" => [v, local[k]] }
+          end
+          local.delete(k)
+        else
+          diff[:delete] << { "#{k}" => v }
+        end
+      end
+
+      local.each do |k, v|
+        diff[:add] << { "#{k}" => v }
+      end
+
+      diff
     end
 
     def aws_params(*ebx_names)

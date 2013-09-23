@@ -26,7 +26,7 @@ module Ebx
     end
 
     def describe
-      @description = begin
+      @description ||= begin
         aws_desc = AWS.elastic_beanstalk.client.describe_configuration_settings(
           application_name: Settings.get(:name),
           template_name: Settings.get(:template_name),

@@ -19,11 +19,13 @@ module Ebx
     end
 
     def describe
-      aws_desc = AWS.elastic_beanstalk.client.describe_applications(
-        application_names: [Settings.get(:name)]
-      ).data[:applications].first
+      @description ||= begin
+        aws_desc = AWS.elastic_beanstalk.client.describe_applications(
+          application_names: [Settings.get(:name)]
+        ).data[:applications].first
 
-      Settings.aws_settings_to_ebx(:application, aws_desc)
+        Settings.aws_settings_to_ebx(:application, aws_desc)
+      end
     end
 
     def delete

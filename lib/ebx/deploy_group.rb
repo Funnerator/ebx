@@ -66,9 +66,12 @@ module Ebx
     end
 
     def settings_diff
+      s = []
       each_region do |region|
-        Settings.remote_diff
+        s << { "#{region}" => Settings.remote_diff.stringify_keys! }.to_yaml
       end
+
+      s
     end
 
     def push_config_settings
