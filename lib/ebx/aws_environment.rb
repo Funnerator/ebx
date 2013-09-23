@@ -4,7 +4,7 @@ module Ebx
 
     def create
       begin
-        if describe.empty?
+        if !exists?
           puts 'Creating environment'
           AWS.elastic_beanstalk.client.create_environment(
             Settings.aws_params(:name, :version, :environment_name, :template_name)
@@ -19,32 +19,46 @@ module Ebx
 
     def stop
       begin
-        if !describe.empty?
-          describe.each do |env|
-            puts "Stopping #{env[:environment_name]} - #{env[:environment_id]}"
-            AWS.elastic_beanstalk.client.terminate_environment({
-              environment_id: env[:environment_id]
-            })
-          end
+        if exists?
+          puts "Stopping #{describe[:environment_name]} - #{describe[:environment_id]}"
+          AWS.elastic_beanstalk.client.terminate_environment({
+            environment_id: describe[:environment_id]
+          })
         end
       rescue Exception
         raise $! # TODO
       end
     end
 
-    def describe
-      aws_desc = AWS.elastic_beanstalk.client.describe_environments({
-        environment_names: [Settings.get(:environment_name)],
-        include_deleted: false
-      })[:environments].first
+    def exists?
+      !!describe
+    end
 
-      Settings.aws_settings_to_ebx(:environment, aws_desc)
+    def describe
+      @description ||= begin
+        aws_desc = AWS.elastic_beanstalk.client.describe_environments({
+          environment_names: [Settings.get(:environment_name)],
+          include_deleted: false
+        })[:environments].first
+
+        Settings.aws_settings_to_ebx(:environment, aws_desc)
+      end
+    end
+
+    CONFIG_ATTRS = [:environment_name, :solution_stack, :environment_id, :cname, :endpoint_url]
+    def config
+      describe.select {|k, _| CONFIG_ATTRS.include? k }      
+    end
+
+    STATUS_ATTRS = [:env_status, :env_health, :endpoint_url]
+    def status
+      describe.select {|k, _| STATUS_ATTRS.include? k }      
     end
 
     def to_s(verbose = false)
-      desc = describe.first || {:status => 'not running', :health => 'off', :endpoint_url => 'none'}
+      return {:status => 'not running', :health => 'off', :endpoint_url => 'none'} if !exists?
 
-      str = "#{Ebx.region} | #{Settings.get(:environment_name)} | #{colorize(desc[:status])} | #{colorize(desc[:health])} | #{desc[:endpoint_url]}\n"
+      str = "#{Ebx.region} | #{config[:environment_name]} | #{colorize(status[:env_status])} | #{colorize(status[:env_health])} | #{status[:endpoint_url]}\n"
 
       if verbose
         str << "Events in the last hour: \n"

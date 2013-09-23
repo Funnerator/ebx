@@ -2,19 +2,6 @@ module Ebx
   class AwsConfigTemplate
 
     #TODO move
-    def option_settings
-      (Settings.get(:options) || []).reduce([]) do |a, (namespace,values)|
-        values.each do |name,value|
-          a << {
-            namespace: namespace,
-            option_name: name,
-            value: value
-          }
-        end
-
-        a
-      end
-    end
 
     def create
       begin

@@ -3,7 +3,7 @@ module Ebx
 
     def create
       begin
-        if exists?
+        if !exists?
           puts "Creating version #{Settings.get(:version)}"
           AWS.elastic_beanstalk.client.create_application_version(
             Settings.aws_params(:name, :version, :s3_bucket, :s3_key)

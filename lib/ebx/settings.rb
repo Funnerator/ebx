@@ -5,15 +5,20 @@ module Ebx
     EBX_TO_AWS = {
       name: [:application, :application_name],
       description: [:application, :description],
+
       version: [:application_version, :version_label],
       version_description: [:application_version, :description],
       s3_bucket: [:application_version, :source_bundle, :s3_bucket],
       s3_key: [:application_version, :source_bundle, :s3_key],
+
       environment_name: [:environment, :environment_name],
       solution_stack: [:environment, :solution_stack_name],
       environment_id: [:environment, :environment_id],
       cname: [:environment, :cname],
       endpoint_url: [:environment, :endpoint_url],
+      env_status: [:environment, :status],
+      env_health: [:environment, :health],
+
       template_name: [:environment_template, :template_name],
       options: [:environment_template, :option_settings]
     }
@@ -67,7 +72,11 @@ module Ebx
     end
 
     def get(attr)
-      config[region][attr.to_s]
+      if attr == :options
+        option_settings(config[region]['options'])
+      else
+        config[region][attr.to_s]
+      end
     rescue NoMethodError
       raise "Region #{region} not defined in #{Ebx.config_path}"
     end
@@ -99,7 +108,7 @@ module Ebx
       descriptions = [
         AwsApplication.new.describe,
         AwsApplicationVersion.new.describe,
-        AwsEnvironment.new.describe,
+        AwsEnvironment.new.config,
         AwsConfigTemplate.new.describe
       ]
       descriptions.reduce({}) {|h, d| h.deep_merge(d) }
@@ -251,6 +260,20 @@ module Ebx
       raise "#{name} exists and is not a directory" if FileTest.file?(dir)
       unless FileTest.directory?(dir)
         Dir.mkdir(dir)
+      end
+    end
+
+    def option_settings(options)
+      (options || []).reduce([]) do |a, (namespace,values)|
+        values.each do |name,value|
+          a << {
+            namespace: namespace,
+            option_name: name,
+            value: value
+          }
+        end
+
+        a
       end
     end
   end
