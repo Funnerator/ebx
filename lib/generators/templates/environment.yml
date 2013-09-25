@@ -1,32 +1,39 @@
 ---
-base: &base
-  name: 'test_app'
-  description: 'test desc'
-  app_id: '123456'
-  solution_stack: '64bit Amazon Linux running Ruby 1.9.3'
-
-  options:
-    aws:autoscaling:launchconfiguration:
-      EC2KeyName: 'id_rsa'
-
-  regions:
-    us-west-2:
-      options:
-        aws:elasticbeanstalk:application:environment:
-          PARAM1: 'a value'
-      
-    us-east-1:
-
+options: &default_options
+  aws:autoscaling:launchconfiguration:
+    EC2KeyName: id_rsa
+  aws:elasticbeanstalk:application:environment:
+    PARAM1: a value
+attrs: &default_attrs
+  name: test_app_2
+  description: test desc
+  app_id: 1234sdlfk
+  solution_stack: 64bit Amazon Linux running Ruby 1.9.3
+  options: *default_options
+regions: &default_regions
+  us-west-2:
+    <<: *default_attrs
+  us-east-1:
+    <<: *default_attrs
+    options:
+      <<: *default_options
+      aws:elasticbeanstalk:application:environment:
+        PARAM1: not a value
 environments:
   production:
-    <<: *base
-    name: 'test_app_prod'
-
+    regions: *default_regions
   test:
-    <<: *base
-
+    regions: *default_regions
   staging:
-    <<: *base
-
+    regions: *default_regions
   development:
-    <<: *base
+    regions:
+      <<: *default_regions
+      us-east-1:
+        <<: *default_attrs
+        name: hello
+        options:
+          <<: *default_options
+          aws:elasticbeanstalk:application:environment:
+            PARAM1: value 3
+            RAILS_ENV: development
