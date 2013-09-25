@@ -56,13 +56,10 @@ module Ebx
 
     # TODO Does not work yet
     def pull_config_settings
-      each_region do |region|
-        #region_options = AwsConfigTemplate.new.pull_options
-        #Settings.set(:options, region_options)
-      end
-
+      puts "Fetching remote settings for #{Ebx.env} environment"
+      remote_settings = Settings::RemoteSettings.new
       puts "Writing remote config to #{Ebx.config_path}"
-      Settings.write_config
+      remote_settings.write_config
     end
 
     def push_config_settings
@@ -83,8 +80,9 @@ pushing configuration changes"
 
     def settings_diff
       s = []
+      remote = Settings::RemoteSettings.new
       each_region do |region|
-        s << { "#{region}" => Settings.remote_diff.stringify_keys! }.to_yaml
+        s << { "#{region}" => Settings.diff(remote).stringify_keys! }.to_yaml
       end
 
       s
