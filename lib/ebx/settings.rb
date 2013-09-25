@@ -43,20 +43,7 @@ module Ebx
     end
 
     def top_config
-      yaml = Psych.load_file(Ebx.config_path)
-      yaml['environments'].each do |env, env_hsh|
-        regions = env_hsh['regions']
-
-        regions.each do |region_name, region_hsh|
-          base = env_hsh.clone
-          base.delete('regions')
-          user_defined = base.deep_merge(region_hsh || {})
-
-          regions[region_name] = generated_names(user_defined).merge(user_defined)
-        end
-      end
-
-      yaml
+      Psych.load_file(Ebx.config_path)
     end
 
     def region
@@ -72,11 +59,7 @@ module Ebx
     end
 
     def get(attr)
-      if attr == :options
-        option_settings(config[region]['options'])
-      else
-        config[region][attr.to_s]
-      end
+      config[region][attr.to_s] || generated_names(config[region])[attr.to_s]
     rescue NoMethodError
       raise "Region #{region} not defined in #{Ebx.config_path}"
     end
@@ -97,11 +80,9 @@ module Ebx
     def write_config
       create_dir('.ebextentions')
       create_dir('eb')
+      a = to_yaml
 
-      #to_yaml = extract_globals
-      to_ast
-     
-      #File.open(Ebx.config_path, 'w') {|f| f.write(config.to_yaml)}
+      File.open(Ebx.config_path, 'w') {|f| f.write(a)}
     end
 
     def remote
@@ -169,66 +150,145 @@ module Ebx
       translate(AWS_TO_EBX, from)
     end
 
+    def yaml_node(hash)
+      doc = Psych::Visitors::YAMLTree.new
+      doc << hash
+      doc.tree.children[0].children[0]
+    end
+
+    def to_yaml
+      root_mapping = Psych::Nodes::Mapping.new
+      settings = top_config['environments'].values
+      default_regions = global_survey(settings)
+
+      # Default Options
+      options = settings.map {|a| a['regions'].values.map {|b| b['options'] } }.flatten(1)
+      default_options = global_survey(options)
+      options_tree = yaml_node(default_options)
+      options_tree.anchor = 'default_options'
+      root_mapping.children << Psych::Nodes::Scalar.new('options')
+      root_mapping.children << options_tree
+
+      # Default Attrs
+      attrs = settings.map {|a| a['regions'].values.map {|b| b.select {|k,v| k != 'options' } } }.flatten(1)
+      default_attrs = global_survey(attrs)
+      attrs_tree = yaml_node(default_attrs)
+      attrs_tree.anchor = 'default_attrs'
+      root_mapping.children << Psych::Nodes::Scalar.new('attrs')
+      attrs_tree.children << Psych::Nodes::Scalar.new('options')
+      attrs_tree.children << Psych::Nodes::Alias.new('default_options')
+      root_mapping.children << attrs_tree
+
+      envs = {}
+      top_config['environments'].each do |env, shash|
+        locals = default_regions.deep_diff(shash)
+        envs[env] = locals
+      end
+
+      # Default Regions
+      regions_tree = Psych::Nodes::Mapping.new('default_regions')
+      default_regions['regions'].each do |region, rhash|
+        diff = default_attrs.merge('options' => default_options).deep_diff(rhash)
+        if diff['options']
+          options_node = yaml_node(diff.delete 'options')
+          options_node.children.unshift Psych::Nodes::Alias.new('default_options')
+          options_node.children.unshift Psych::Nodes::Scalar.new('<<')
+
+          region_tree = yaml_node(diff)
+          region_tree.children.unshift Psych::Nodes::Scalar.new('options')
+          region_tree.children << options_node
+        else
+          region_tree = yaml_node(diff)
+        end
+
+        region_tree.children.unshift Psych::Nodes::Alias.new('default_attrs')
+        region_tree.children.unshift Psych::Nodes::Scalar.new('<<')
+
+        regions_tree.children << Psych::Nodes::Scalar.new(region)
+        regions_tree.children << region_tree
+      end
+      root_mapping.children << Psych::Nodes::Scalar.new('regions')
+      root_mapping.children << regions_tree
+
+
+      # Environments
+      environments_tree = Psych::Nodes::Mapping.new
+
+      envs.each do |env, shash|
+        env_tree = Psych::Nodes::Mapping.new
+        env_tree.children << Psych::Nodes::Scalar.new('regions')
+
+        #:wregion_tree = Psych::Nodes::Mapping.new
+        if shash.empty?
+          env_tree.children << Psych::Nodes::Alias.new('default_regions')
+        elsif shash['regions']
+          regions_node = Psych::Nodes::Mapping.new
+
+          shash['regions'].each do |region, hsh|
+            if hsh['options']
+              options_node = yaml_node(hsh.delete 'options')
+              options_node.children.unshift Psych::Nodes::Alias.new('default_options')
+              options_node.children.unshift Psych::Nodes::Scalar.new('<<')
+            end
+
+            rnode = yaml_node(hsh)
+
+            if options_node
+              rnode.children << Psych::Nodes::Scalar.new('options')
+              rnode.children << options_node
+            end
+
+            rnode.children.unshift Psych::Nodes::Alias.new('default_attrs')
+            rnode.children.unshift Psych::Nodes::Scalar.new('<<')
+
+            regions_node.children << Psych::Nodes::Scalar.new(region)
+            regions_node.children << rnode
+          end
+
+          regions_node.children.unshift Psych::Nodes::Alias.new('default_regions')
+          regions_node.children.unshift Psych::Nodes::Scalar.new('<<')
+
+          env_tree.children << regions_node
+        end
+
+        environments_tree.children << Psych::Nodes::Scalar.new(env)
+        environments_tree.children << env_tree
+      end
+
+      root_mapping.children << Psych::Nodes::Scalar.new('environments')
+      root_mapping.children << environments_tree
+
+
+
+
+      
+      stream = Psych::Nodes::Stream.new
+      doc = Psych::Nodes::Document.new
+      stream.children << doc
+      doc.children << root_mapping
+
+      stream.to_yaml
+    end
+
     private
 
-    def to_ast
-      settings = top_config.deep_dup
-      env_settings = settings['environments'][Ebx.env]['regions'] = config.deep_dup
-
-      global_survey(settings['environments'].values)
-
+    def delete_global_dups(parent, children)
+      children.each do |key, hsh|
+        parent.each do |k, v|
+          children[key].delete(k) if hsh[k] == v
+        end
+      end
     end
 
     def global_survey(hashes)
+      return {} if hashes.find {|a| a == nil }
       survey = HashCounter.new
       hashes.each do |hash|
         hash.each do |k, v|
           survey[k] =  v
         end
       end
-      binding.pry
-    end
-
-    def extract_globals
-      to_yaml = config.deep_dup
-
-      globals = to_yaml['base'] = to_yaml[master_region].deep_dup
-
-      to_yaml.each do |region, rvalues|
-        # Remove non-matched options in globals
-        globals.each do |namespace, vals|
-          vals.each do |name, val|
-            v2 = rvalues[namespace] != nil ? rvalues[namespace][name] : nil
-
-            if !val_eql?(val, v2)
-              if globals[namespace].size == 1
-                globals.delete(namespace)
-              else 
-                globals[namespace].delete(name)
-              end
-            end
-          end
-        end
-      end
-
-      # Remove globals from regions
-      to_yaml.each do |region, rvalues|
-        globals.each do |namespace, vals|
-          vals.each do |name, val|
-            v2 = rvalues[namespace] != nil ? rvalues[namespace][name] : nil
-
-            if val_eql?(val, v2)
-              if rvalues[namespace].size == 1
-                rvalues.delete(namespace)
-              else
-                rvalues[namespace].delete(name)
-              end
-            end
-          end
-        end
-      end
-
-      to_yaml
+      survey.global(hashes.size)
     end
 
     def generated_names(settings)
@@ -302,61 +362,69 @@ module Ebx
 end
 
 class HashCounter
-  def initialize
+  def initialize(hsh= nil)
     @hash = {}
     @global = {}
+
+    add_hash(hsh) if hsh
   end
 
-  def []=(key, val)
-    @hash[key] ||= {}
-
-    if val.is_a? Hash
-      @hash[key]['hsh'] ||= [HashCounter.new, 0]
-      val.each do |k, v|
-        @hash[key]['hsh'][0][k] = v
-        @hash[key]['hsh'][1] += 1
-      end
-    else
-      found = false
-      @hash[key].each do |v, count|
-        if val_eql?(v, val)
-          found = true
-          @hash[key][val] += 1
-        end
-      end
-
-      @hash[key][val] = 1 if !found
+  def add_hash(hsh)
+    hsh.each do |k, v|
+      self[k] = v
     end
   end
 
-  def global(counter)
-    @hash.each do |k, values|
-      count = 0
-      values.each do |v, c|
-        count += v == 'hsh' ? c[1] : c
-      end
+  def []=(key, val)
+    store = @hash[key] ||= []
 
-      @global[k] = get_global(k, values) if count >= counter
+    item = store.find { |v, c| val_eql?(v, val) || (v.is_a?(HashCounter) && val.is_a?(Hash)) }
+    if val.is_a?(Hash)
+      if !item
+        store << item = [HashCounter.new(val), 0]
+      else
+        item[0].add_hash(val)
+      end
+    elsif !item
+      store << item = [val, 0]
+    end
+
+    item[1] += 1
+  end
+
+  def global(counter)
+    @hash.each do |k, vals|
+      count = vals.inject(0) {|s, (_,c)| s += c }
+      if count == counter
+        val, c = *vals.max_by(&:last)
+        @global[k] = val.is_a?(HashCounter) ? val.global_hash : val
+      end
     end
 
     @global
   end
 
-  def get_global(k, values)
-    max, val = 0, nil
-    values.each do |value, count|
-      if value == 'hsh'
-        hashCounter, c = *count
-       if (max = [c, max].max) == c
-         val = hashCounter.global(0)
-       end
-      else
-        val = value if (max = [count,max].max) == count
+  def inspect
+    @hash.inspect
+  end
+
+  def global_hash
+    max = 0
+    @hash.each do |k, vals|
+      max = [max, vals.max_by(&:last)[1]].max
+    end
+
+    @hash.each do |k, vals|
+      val, _ = *vals.find {|_, c| c >= (max / 2.0).ceil }
+      if val
+        @global[k] = val.is_a?(HashCounter) ? val.global_hash : val
       end
     end
 
-    val
+    @global
   end
+
+  private
 
   def val_eql?(val1, val2)
     return false if !(val1 === val2)
@@ -369,9 +437,5 @@ class HashCounter
     else
       val1 == val2
     end
-  end
-
-  def inspect
-    @hash.inspect
   end
 end

@@ -7,4 +7,21 @@ class Hash
       oldval.class.to_s == 'Hash' && newval.class.to_s == 'Hash' ? oldval.deep_merge(newval) : newval
     end
   end
+
+  def deep_diff(other_hash)
+    r = {}
+
+    other_hash.each do |k, v|
+      if !self[k] || !(self[k].is_a?(v.class))
+        r[k] = v
+      elsif v.is_a?(Hash)
+        diff = self[k].deep_diff(v)
+        r[k] = diff if !diff.empty?
+      elsif v != self[k]
+        r[k] = v
+      end
+    end
+
+    r
+  end
 end

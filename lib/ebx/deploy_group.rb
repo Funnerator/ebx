@@ -57,12 +57,28 @@ module Ebx
     # TODO Does not work yet
     def pull_config_settings
       each_region do |region|
-        region_options = AwsConfigTemplate.new.pull_options
-        Settings.set(:options, region_options)
+        #region_options = AwsConfigTemplate.new.pull_options
+        #Settings.set(:options, region_options)
       end
 
       puts "Writing remote config to #{Ebx.config_path}"
       Settings.write_config
+    end
+
+    def push_config_settings
+      `git fetch`
+      if !`git status -s #{Ebx.config_path}`.empty?
+        puts "You have local changes to your ebx config that have not been pushed to \
+your remote repository yet. To keep everyone in sync, please do so \
+before pushing aws configuration changes"
+      elsif !`git log HEAD..origin #{Ebx.config_path}`.empty?
+        puts "Please pull the latest changes to the ebx config before \
+pushing configuration changes"
+      else
+        each_region do |region|
+          Settings.push
+        end
+      end
     end
 
     def settings_diff
@@ -72,11 +88,6 @@ module Ebx
       end
 
       s
-    end
-
-    def push_config_settings
-      each_region do |region|
-      end
     end
 
     def settings(where = 'local')
