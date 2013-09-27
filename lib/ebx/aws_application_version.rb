@@ -23,7 +23,8 @@ module Ebx
         aws_desc = AWS.elastic_beanstalk.client.describe_application_versions(
           application_name: Settings.get(:name)
         )[:application_versions]
-        current_version = AwsEnvironment.new.describe[:version]
+        env_desc = AwsEnvironment.new.describe
+        current_version = env_desc ? env_desc[:version] : nil
         aws_desc = aws_desc.find {|a| a[:version] == current_version }
 
         Settings.aws_settings_to_ebx(:application_version, aws_desc)

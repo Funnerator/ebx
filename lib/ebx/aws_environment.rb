@@ -56,9 +56,9 @@ module Ebx
     end
 
     def to_s(verbose = false)
-      return {:status => 'not running', :health => 'off', :endpoint_url => 'none'} if !exists?
+      st = exists? ? status : {:env_status => 'not running', :env_health => 'off', :endpoint_url => 'none'}
 
-      str = "#{Ebx.region} | #{config[:environment_name]} | #{colorize(status[:env_status])} | #{colorize(status[:env_health])} | #{status[:endpoint_url]}\n"
+      str = "#{Ebx.region} | #{Settings.get(:environment_name)} | #{colorize(st[:env_status])} | #{colorize(st[:env_health])} | #{st[:endpoint_url]}\n"
 
       if verbose
         str << "Events in the last hour: \n"

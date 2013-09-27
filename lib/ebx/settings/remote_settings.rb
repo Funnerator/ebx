@@ -1,7 +1,9 @@
 module Ebx
   module Settings
-    class RemoteSettings < LocalSettings
+    class RemoteSettings < Base
       def initialize
+        @config = global_config['environments'][Ebx.env]['regions']
+
         Settings.regions.each do |region|
           Ebx.set_region(region)
 
@@ -11,11 +13,10 @@ module Ebx
             AwsEnvironment.new.config,
             AwsConfigTemplate.new.describe
           ]
-          global_config['environments'][Ebx.env]['regions'][region] = 
-            descriptions.reduce({}) {|h, d| h.deep_merge(d) }.stringify_keys!
-        end
 
-        @config = global_config['environments'][Ebx.env]['regions']
+          global_config['environments'][Ebx.env]['regions'][region] = 
+            generated_names.deep_diff(descriptions.reduce({}) {|h, d| h.deep_merge(d) }.stringify_keys!)
+        end
       end
     end
   end

@@ -1,3 +1,4 @@
+require 'ebx/settings/base'
 require 'ebx/settings/local_settings'
 require 'ebx/settings/remote_settings'
 require 'ebx/settings/hash_counter'

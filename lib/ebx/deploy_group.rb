@@ -37,7 +37,7 @@ module Ebx
 
     def describe(verbose = false)
       each_region do |region|
-        say AwsEnvironment.new.to_s(verbose)
+        puts AwsEnvironment.new.to_s(verbose)
       end
     end
 
@@ -54,7 +54,6 @@ module Ebx
       end
     end
 
-    # TODO Does not work yet
     def pull_config_settings
       puts "Fetching remote settings for #{Ebx.env} environment"
       remote_settings = Settings::RemoteSettings.new
@@ -89,16 +88,12 @@ pushing configuration changes"
     end
 
     def settings(where = 'local')
-      s = []
-      each_region do |region|
-        if where == 'local'
-          s << { "#{region}" => Settings.config[region] }.to_yaml
-        elsif where == 'remote'
-          s << { "#{region}" => Settings.remote }.to_yaml
-        end
+      case where
+      when 'local'
+        Settings.config.to_yaml
+      when 'remote'
+        Settings::RemoteSettings.new.config.to_yaml
       end
-
-      s
     end
 
     def stop

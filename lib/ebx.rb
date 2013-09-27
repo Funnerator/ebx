@@ -14,8 +14,8 @@ require 'ebx/deploy_group'
 require 'ebx/version'
 
 require 'ebx/core_ext/hash/deep_merge'
-require 'ebx/core_ext/hash/deep_dup'
 require 'ebx/core_ext/hash/keys'
+require 'ebx/core_ext/object/deep_dup'
 
 module Ebx
   extend self
