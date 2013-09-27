@@ -10,7 +10,7 @@ module Ebx
 
       app_bucket.objects[Settings.get(:s3_key)].tap do |o|
         unless o.exists?
-          puts 'Bundling project'
+          puts 'Bundling and pushing project'
           zip = `git ls-tree -r --name-only HEAD | zip - -q -@`
           o.write(zip)
         end
@@ -18,6 +18,7 @@ module Ebx
     end
 
     def app_bucket
+      # TODO use create_storage_location
       AWS.s3.buckets[Settings.get(:s3_bucket)]
     end
   end

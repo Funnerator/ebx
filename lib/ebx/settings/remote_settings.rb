@@ -2,6 +2,7 @@ module Ebx
   module Settings
     class RemoteSettings < Base
       def initialize
+        init_config
         @config = global_config['environments'][Ebx.env]['regions']
 
         Settings.regions.each do |region|

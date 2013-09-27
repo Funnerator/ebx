@@ -19,6 +19,29 @@ module Ebx
         conf.create
 
         env = AwsEnvironment.new
+        env.start
+
+        env.subscribe(notification_service)
+      end
+    end
+
+    def deploy
+      each_region do |region|
+        puts "Deploying to #{region}"
+
+        s3 = AwsS3.new
+        s3.push_application_version
+
+        app = AwsApplication.new
+        app.create
+
+        ver = AwsApplicationVersion.new
+        ver.create
+
+        conf = AwsConfigTemplate.new
+        conf.create
+
+        env = AwsEnvironment.new
         env.create
 
         env.subscribe(notification_service)
@@ -52,6 +75,12 @@ module Ebx
           remote_execute("tail #{logs}")
         end
       end
+    end
+
+    def console
+      app_location = '/var/app/current'
+
+      remote_execute("cd #{app_location} && rails console", true)
     end
 
     def pull_config_settings

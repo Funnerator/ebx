@@ -1,45 +1,90 @@
 module Ebx
   class AwsEnvironment
-    attr_accessor :queue
+    attr_accessor :queue, :id
 
-    def create
-      begin
-        if !exists?
-          puts 'Creating environment'
-          AWS.elastic_beanstalk.client.create_environment(
-            Settings.aws_params(:name, :version, :environment_name, :template_name)
-          )
+    def self.boot(params = nil)
+      response = AWS.elastic_beanstalk.client.create_environment(
+        params || Settings.aws_params(:name, :version, :environment_name, :template_name)
+      )
+
+      Ebx::AwsEnvironment.new(id: response[:environment_id])
+    end
+
+    def initialize(attrs)
+      @id = attrs[:id]
+    end
+
+    def id
+      @id ||= describe[:environment_id]
+    end
+
+    def start
+      if current? && !running?
+        # boot
+      end
+
+      if !current?
+        puts "Booting up environment #{Settings.get(:environment_name)}..."
+        new_env = AwsEnvironment.boot
+        loop do
+          puts 'booting...'
+          sleep(3.0)
+          break if new_env.running?(true)
         end
 
-        @queue =  AWS.sqs.queues.create(Settings.get(:sqs_name))
-      rescue Exception
-        raise $! # TODO
+        if running?
+          puts 'Swapping CNAMES'
+          swap_cname_with(new_env)
+          stop
+        end
       end
+
+      @queue =  AWS.sqs.queues.create(Settings.get(:sqs_name))
+
+    rescue Exception
+      raise $! # TODO
     end
 
     def stop
-      begin
-        if exists?
-          puts "Stopping #{describe[:environment_name]} - #{describe[:environment_id]}"
-          AWS.elastic_beanstalk.client.terminate_environment({
-            environment_id: describe[:environment_id]
-          })
-        end
-      rescue Exception
-        raise $! # TODO
+      if running?
+        puts "Stopping #{describe[:environment_name]} - #{describe[:environment_id]}"
+        AWS.elastic_beanstalk.client.terminate_environment({
+          environment_id: describe[:environment_id]
+        })
       end
+
+    rescue Exception
+      raise $! # TODO
     end
 
-    def exists?
-      !!describe
+    def swap_cname_with(other_env)
+      Aws.elastic_beanstalk.client.swap_environment_cnam_es(
+        source_environment_id: self.id,
+        destination_environment_id: other_env.id
+      )
     end
 
-    def describe
+    def current?
+      describe? && describe[:version] == settings.get(:version)
+    end
+
+    def running?(force_check = false)
+      describe(force_check) && describe[:env_status] == 'Ready'
+    end
+
+    def describe(force_check = false)
+      @description = nil if force_check
       @description ||= begin
-        aws_desc = AWS.elastic_beanstalk.client.describe_environments({
-          environment_names: [Settings.get(:environment_name)],
-          include_deleted: false
-        })[:environments].first
+        if @id
+          aws_desc = AWS.elastic_beanstalk.client.describe_environments({
+            environment_ids: [id]
+          })[:environments].first
+        else
+          environments = AWS.elastic_beanstalk.client.describe_environments(
+            Settings.aws_params(:name)
+          )[:environments]
+          aws_desc = environments.find {|e| e['status'] == 'Ready' }
+        end
 
         Settings.aws_settings_to_ebx(:environment, aws_desc)
       end

@@ -2,15 +2,11 @@ module Ebx
   class AwsApplicationVersion
 
     def create
-      begin
-        if !current?
-          puts "Creating version #{Settings.get(:version)}"
-          AWS.elastic_beanstalk.client.create_application_version(
-            Settings.aws_params(:name, :version, :s3_bucket, :s3_key)
-          )
-        end
-      rescue Exception
-        raise $! # TODO
+      if !current?
+        puts "Creating version #{Settings.get(:version)}"
+        AWS.elastic_beanstalk.client.create_application_version(
+          Settings.aws_params(:name, :version, :s3_bucket, :s3_key)
+        )
       end
     end
 

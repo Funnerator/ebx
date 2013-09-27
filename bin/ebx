@@ -69,6 +69,17 @@ command :stop do |c|
   end
 end
 
+command :deploy do |c|
+  c.syntax = 'ebx deploy [env] [options]'
+  c.summary = 'Deploy your application'
+
+  c.action do |args, options|
+    setup_env(options)
+
+    Ebx::DeployGroup.new.deploy
+  end
+end
+
 command :logs do |c|
   c.syntax = 'ebx log [env] [options]'
   c.summary = 'Retrieve logs'
@@ -100,6 +111,17 @@ command :shell do |c|
     setup_env(options)
 
     Ebx::DeployGroup.new.remote_shell
+  end
+end
+
+command :console do |c|
+  c.syntax = 'ebx console [env]'
+  c.summary = ''
+
+  c.action do |args, options|
+    setup_env(options)
+
+    Ebx::DeployGroup.new.console
   end
 end
 

@@ -4,7 +4,9 @@ module Ebx
       attr_reader :config
 
       def global_config
-        @global_config ||= Psych.load_file(Ebx.config_path)
+       unless FileTest.file?(Ebx.config_path)
+       end
+       @global_config ||= Psych.load_file(Ebx.config_path)
       end
 
       def region
@@ -205,8 +207,8 @@ module Ebx
         }
       end
 
-      def application_version
-        `git rev-parse HEAD`.chomp!
+      def application_version(short = false)
+        `git rev-parse #{'--short' if short} HEAD`.chomp!
       end
 
       def application_bucket_name(settings)
@@ -233,8 +235,16 @@ module Ebx
         "#{settings['name']}-#{Ebx.env}-template"
       end
 
+      def branch_name
+        `git rev-parse --abbrev-ref HEAD`
+      end
+
+      def env_prefix
+        @env_prefix ||= rand(36**7).to_s(36)
+      end
+
       def env_name
-        "#{Ebx.env}-#{`git rev-parse --abbrev-ref HEAD`}".strip.gsub(/\s/, '-')[0..23]
+        "#{env_prefix}-#{Ebx.env}-#{branch_name}".strip.gsub(/\s/, '-')[0..22]
       end
 
       def option_settings(options)
@@ -248,6 +258,26 @@ module Ebx
           end
 
         a
+        end
+      end
+
+      private
+
+      def init_config
+        create_dir('.ebextentions')
+        create_dir('eb')
+
+        unless FileTest.file?(Ebx.config_path)
+          FileUtils.cp(File.expand_path('../../../generators/templates/environment.yml', __FILE__), Ebx.config_path)
+        end
+      end
+
+      def create_dir(name)
+        dir = File.expand_path(name, Dir.pwd)
+
+        raise "#{name} exists and is not a directory" if FileTest.file?(dir)
+        unless FileTest.directory?(dir)
+          Dir.mkdir(dir)
         end
       end
     end
