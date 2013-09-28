@@ -1,17 +1,13 @@
 module Ebx
-  class AwsApplication
+  class AwsApplication < AwsService
 
     def create
-      begin
-        if !exists?
-          puts "Creating application"
-          AWS.elastic_beanstalk.client.create_application(
-            Settings.aws_params(:name, :description)
-          )
-        end
-      rescue Exception
-        raise $! # TODO
-      end
+      return if exists?
+
+      puts "Creating application"
+      elastic_beanstalk.client.create_application(
+        Settings.aws_params(:name, :description)
+      )
     end
 
     def exists?
@@ -20,7 +16,7 @@ module Ebx
 
     def describe
       @description ||= begin
-        aws_desc = AWS.elastic_beanstalk.client.describe_applications(
+        aws_desc = elastic_beanstalk.client.describe_applications(
           application_names: [Settings.get(:name)]
         ).data[:applications].first
 

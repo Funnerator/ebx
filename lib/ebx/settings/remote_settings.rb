@@ -10,7 +10,7 @@ module Ebx
 
           descriptions = [
             AwsApplication.new.describe,
-            AwsApplicationVersion.new.describe,
+            AwsApplicationVersion.new.current,
             AwsEnvironment.new.config,
             AwsConfigTemplate.new.describe
           ]

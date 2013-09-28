@@ -1,22 +1,20 @@
 module Ebx
-  class AwsConfigTemplate
-
-    #TODO move
+  class AwsConfigTemplate < AwsService
 
     def create
       begin
-        app = AWS.elastic_beanstalk.client.describe_applications(
+        app = elastic_beanstalk.client.describe_applications(
           application_names: [Settings.get(:name)]
         ).data[:applications].first
 
         template = if !app[:configuration_templates].include?(Settings.get(:template_name))
           puts "Creating configuration template"
-          AWS.elastic_beanstalk.client.create_configuration_template(
+          elastic_beanstalk.client.create_configuration_template(
             Settings.aws_params(:name, :template_name, :solution_stack, :options)
           )
         else
           puts "Updating configuration template"
-          AWS.elastic_beanstalk.client.update_configuration_template(
+          elastic_beanstalk.client.update_configuration_template(
             Settings.aws_params(:name, :template_name, :options)
           )
         end
@@ -27,7 +25,7 @@ module Ebx
 
     def describe
       @description ||= begin
-        aws_desc = AWS.elastic_beanstalk.client.describe_configuration_settings(
+        aws_desc = elastic_beanstalk.client.describe_configuration_settings(
           application_name: Settings.get(:name),
           template_name: Settings.get(:template_name),
         )[:configuration_settings].first
@@ -52,7 +50,7 @@ module Ebx
     end
 
     def options
-      @options ||= AWS.elastic_beanstalk.client.describe_configuration_options(
+      @options ||= elastic_beanstalk.client.describe_configuration_options(
         application_name: Settings.get(:name),
         template_name: Settings.get(:template_name),
       )[:options]

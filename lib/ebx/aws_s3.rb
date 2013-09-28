@@ -1,11 +1,9 @@
-require 'singleton'
-
 module Ebx
-  class AwsS3
+  class AwsS3 < AwsService
 
     def push_application_version
       unless app_bucket.exists?
-        AWS.s3.buckets.create(Settings.get(:s3_bucket))
+        s3.buckets.create(Settings.get(:s3_bucket))
       end
 
       app_bucket.objects[Settings.get(:s3_key)].tap do |o|
@@ -19,7 +17,7 @@ module Ebx
 
     def app_bucket
       # TODO use create_storage_location
-      AWS.s3.buckets[Settings.get(:s3_bucket)]
+      s3.buckets[Settings.get(:s3_bucket)]
     end
   end
 end

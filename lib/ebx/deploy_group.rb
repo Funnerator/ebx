@@ -1,74 +1,26 @@
+require 'ebx/application_group'
+require 'ebx/environment_group'
+
 module Ebx
   class DeployGroup
 
-    def create
-      each_region do |region|
-        puts "Deploying to #{region}"
-
-        puts "Pushing application to S3"
-        s3 = AwsS3.new
-        s3.push_application_version
-
-        app = AwsApplication.new
-        app.create
-
-        ver = AwsApplicationVersion.new
-        ver.create
-
-        conf = AwsConfigTemplate.new
-        conf.create
-
-        env = AwsEnvironment.new
-        env.start
-
-        env.subscribe(notification_service)
-      end
-    end
-
     def deploy
-      each_region do |region|
-        puts "Deploying to #{region}"
-
-        s3 = AwsS3.new
-        s3.push_application_version
-
-        app = AwsApplication.new
-        app.create
-
-        ver = AwsApplicationVersion.new
-        ver.create
-
-        conf = AwsConfigTemplate.new
-        conf.create
-
-        env = AwsEnvironment.new
-        env.create
-
-        env.subscribe(notification_service)
-      end
-    end
-
-    def notification_service
-      @topic ||= begin
-        old_region = Settings.region
-        Ebx.set_region(Settings.master_region)
-        AWS.sns.topics.create(Settings.get(:sns_name))
-      end
-    ensure
-      Ebx.set_region(old_region)
+      ApplicationGroup.new(regions).push
+      EnvironmentGroup.new(regions).boot
     end
 
     def describe(verbose = false)
-      each_region do |region|
-        puts AwsEnvironment.new.to_s(verbose)
-      end
+      EnvironmentGroup.new(regions).describe(verbose)
+    end
+
+    def regions
+      Settings.regions
     end
 
     def logs(follow = false)
       logs = "/var/log/eb* /var/log/cfn*"
       # /var/app/support/logs/* 
-      each_region do |region|
-
+      regions.each do |region|
         if follow
           remote_execute("tail -f -n 0 #{logs}", true)
         else
@@ -79,7 +31,7 @@ module Ebx
 
     def console
       app_location = '/var/app/current'
-
+      Ebx.set_region(Ebx.master_region)
       remote_execute("cd #{app_location} && rails console", true)
     end
 
@@ -100,7 +52,7 @@ before pushing aws configuration changes"
         puts "Please pull the latest changes to the ebx config before \
 pushing configuration changes"
       else
-        each_region do |region|
+        regions.each do |region|
           Settings.push
         end
       end
@@ -109,7 +61,7 @@ pushing configuration changes"
     def settings_diff
       s = []
       remote = Settings::RemoteSettings.new
-      each_region do |region|
+      regions.each do |region|
         s << { "#{region}" => Settings.diff(remote).stringify_keys! }.to_yaml
       end
 
@@ -126,13 +78,13 @@ pushing configuration changes"
     end
 
     def stop
-      each_region do |region|
-        AwsEnvironment.new.stop
+      regions.each do |region|
+        AwsEnvironment.new(region).stop
       end
     end
 
     def delete_application
-      each_region do |region|
+      regions.each do |region|
         AwsApplication.new.delete
       end
     end
@@ -162,13 +114,6 @@ pushing configuration changes"
         system "ssh ec2-user@#{dns_name} #{cmd}"
       else
         `ssh ec2-user@#{dns_name} #{cmd}`
-      end
-    end
-
-    def each_region(regions = Settings.regions, &block)
-      regions.each do |region|
-        Ebx.set_region(region)
-        yield region
       end
     end
   end

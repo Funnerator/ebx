@@ -54,7 +54,7 @@ command :start do |c|
   c.action do |args, options|
     setup_env(options)
 
-    Ebx::DeployGroup.new.create
+    Ebx::DeployGroup.new.deploy
   end
 end
 
@@ -99,7 +99,7 @@ command :status do |c|
   c.action do |args, options|
     setup_env(options)
 
-    Ebx::DeployGroup.new.describe(options.verbose)
+    puts Ebx::DeployGroup.new.describe(options.verbose)
   end
 end
 
