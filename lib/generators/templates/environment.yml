@@ -31,7 +31,6 @@ environments:
       <<: *default_regions
       us-east-1:
         <<: *default_attrs
-        name: hello
         options:
           <<: *default_options
           aws:elasticbeanstalk:application:environment:
