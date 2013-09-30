@@ -5,6 +5,7 @@ module Ebx
   class DeployGroup
 
     def deploy
+      Route53.new
       ApplicationGroup.new(regions).push
       EnvironmentGroup.new(regions).boot
     end
@@ -20,7 +21,7 @@ module Ebx
     def logs(follow = false)
       logs = "/var/log/eb* /var/log/cfn*"
       # /var/app/support/logs/* 
-      regions.each do |region|
+      regions.map do |region|
         if follow
           remote_execute("tail -f -n 0 #{logs}", true)
         else
@@ -78,21 +79,15 @@ pushing configuration changes"
     end
 
     def stop
-      regions.each do |region|
-        AwsEnvironment.new(region:region).stop
-      end
+      EnvironmentGroup.new(regions).stop
     end
 
     def delete_application
-      regions.each do |region|
-        AwsApplication.new.delete
-      end
+      ApplicationGroup.new(regions).delete
     end
 
     def ec2_instance_ids
-      Ebx.set_region(Settings.master_region)
-
-      AwsEnvironment.new.ec2_instance_ids
+      CurrentEnvironment.master.ec2_instance_ids
     end
 
     def remote_shell
@@ -104,9 +99,9 @@ pushing configuration changes"
     end
 
     def remote_execute(cmd, subprocess = false)
-      ec2_id = AwsEnvironment.new.ec2_instance_ids.first
+      ec2_id = CurrentEnvironment.master.ec2_instance_ids.first
       if !ec2_id
-        puts "No active ec2 instances found for #{Settings.get(:environment_name)}"
+        puts "No active ec2 instances found for #{CurrentEnvironment.master.name}"
         return
       end
       dns_name = AWS.ec2.instances[ec2_id].dns_name

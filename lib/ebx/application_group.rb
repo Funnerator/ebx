@@ -13,5 +13,9 @@ module Ebx
       applications.each {|a| a.create }
       versions.each {|v| v.create }
     end
+
+    def delete
+      applications.each {|a| a.delete }
+    end
   end
 end

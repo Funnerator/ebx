@@ -6,7 +6,10 @@ module Ebx
     end
 
     def subscribe(listener)
-      create.subscribe(listener)
+      create
+      if !@sns.subscriptions.find {|s| s.arn == listener.arn }
+        @sns.subscribe(listener)
+      end
     end
   end
 end

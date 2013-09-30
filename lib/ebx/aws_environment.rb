@@ -1,15 +1,26 @@
 module Ebx
   class AwsEnvironment < AwsService
+    include PrettyPrint
+
     attr_accessor :id
 
     def self.boot(region)
-      cur_env = AwsEnvironment.new(region: region)
+      cur_env = CurrentEnvironment.new(region: region)
       return cur_env if cur_env.current?
 
       new_env = AwsEnvironment.new(region: region)
       new_env.boot
       new_env.subscribe(NotificationService.new({}))
       new_env
+    end
+
+    def initialize(params)
+      super
+      @id = params[:id]
+    end
+
+    def name
+      describe[:environment_name]
     end
 
     def boot
@@ -19,13 +30,9 @@ module Ebx
       @id = response[:environment_id]
     end
 
-    def id
-      @id ||= describe[:environment_id]
-    end
-
     def stop
       if running?
-        puts "Stopping #{describe[:environment_name]} - #{describe[:environment_id]}"
+        puts "Stopping #{name} - #{describe[:environment_id]}"
         elastic_beanstalk.client.terminate_environment({
           environment_id: describe[:environment_id]
         })
@@ -40,7 +47,7 @@ module Ebx
     end
 
     def current?
-      describe && describe[:version] == settings.get(:version)
+      describe && describe[:version] == Settings.get(:version)
     end
 
     def running?
@@ -49,16 +56,9 @@ module Ebx
 
     def describe
       @description ||= begin
-        if @id
-          aws_desc = elastic_beanstalk.client.describe_environments({
-            environment_ids: [id]
-          })[:environments].first
-        else
-          environments = elastic_beanstalk.client.describe_environments(
-            Settings.aws_params(:name)
-          )[:environments]
-          aws_desc = environments.find {|e| e['status'] == 'Ready' }
-        end
+        aws_desc = elastic_beanstalk.client.describe_environments({
+          environment_ids: [id]
+        })[:environments].first
 
         Settings.aws_settings_to_ebx(:environment, aws_desc)
       end
@@ -69,7 +69,7 @@ module Ebx
       describe.select {|k, _| CONFIG_ATTRS.include? k }      
     end
 
-    STATUS_ATTRS = [:env_status, :env_health, :endpoint_url]
+    STATUS_ATTRS = [:env_status, :env_health, :endpoint_url, :cname]
     def status
       @description = nil
       if describe
@@ -80,7 +80,7 @@ module Ebx
     end
 
     def to_s(verbose = false)
-      str = "#{Ebx.region} | #{Settings.get(:environment_name)} | #{colorize(status[:env_status])} | #{colorize(status[:env_health])} | #{status[:endpoint_url]}\n"
+      str = "#{region} | #{name} | #{colorize(status[:env_status])} | #{colorize(status[:env_health])} | #{status[:cname]}\n"
 
       if verbose
         str << "Events in the last hour: \n"
@@ -100,19 +100,6 @@ module Ebx
       })[:events]
     end
 
-    def colorize(str)
-      case str
-      when 'Red', 'ERROR', 'FATAL'
-        str.color(:red)
-      when 'WARN'
-        str.color(:yellow)
-      when 'Ready', 'Green', 'INFO'
-        str.color(:green)
-      else
-        str.color(:white)
-      end
-    end
-
     def subscribe(notification_service)
       puts "subscribing to notification service"
       @queue ||= sqs.queues.create(Settings.get(:sqs_name))
@@ -121,7 +108,7 @@ module Ebx
 
     def describe_resources
       elastic_beanstalk.client.describe_environment_resources({
-        :environment_name => Settings.get(:environment_name)
+        :environment_name => name
       })[:environment_resources]
     end
 
