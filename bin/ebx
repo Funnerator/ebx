@@ -116,7 +116,7 @@ end
 
 command :console do |c|
   c.syntax = 'ebx console [env]'
-  c.summary = ''
+  c.summary = 'start a rails console on one of the ec2 machines in [env]'
 
   c.action do |args, options|
     setup_env(options)
