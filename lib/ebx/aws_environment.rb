@@ -5,13 +5,30 @@ module Ebx
     attr_accessor :id
 
     def self.boot(region)
-      cur_env = CurrentEnvironment.new(region: region)
-      return cur_env if cur_env.current?
+      cur_env = self.find_running(region)
+      return cur_env if cur_env && cur_env.current?
 
       new_env = AwsEnvironment.new(region: region)
       new_env.boot
       new_env.subscribe(NotificationService.new({}))
       new_env
+    end
+
+    def self.master
+      self.new(region: Settings.master_region)
+    end
+
+    def self.find_running(region)
+      Ebx.set_region(region)
+      environments = AWS.elastic_beanstalk.client.describe_environments(
+        Settings.aws_params(:name)
+      )[:environments]
+      env = environments.find {|e| e[:status] != 'Terminated' }
+
+      if env
+        desc = Settings.aws_settings_to_ebx(:environment, aws_desc)
+        self.new(region: region, id: desc[:environment_id])
+      end
     end
 
     def initialize(params)

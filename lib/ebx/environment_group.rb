@@ -7,7 +7,7 @@ module Ebx
     def initialize(regions)
       @regions = regions
       @configs = regions.map {|r| AwsConfigTemplate.new(region: r) }
-      @environments = regions.map {|r| CurrentEnvironment.new(region: r) }
+      @environments = regions.map {|r| AwsEnvironment.find_running(r) }.compact
     end
 
     def boot

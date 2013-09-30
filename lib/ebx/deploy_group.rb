@@ -87,7 +87,7 @@ pushing configuration changes"
     end
 
     def ec2_instance_ids
-      CurrentEnvironment.master.ec2_instance_ids
+      AwsEnvironment.master.ec2_instance_ids
     end
 
     def remote_shell
@@ -99,9 +99,9 @@ pushing configuration changes"
     end
 
     def remote_execute(cmd, subprocess = false)
-      ec2_id = CurrentEnvironment.master.ec2_instance_ids.first
+      ec2_id = AwsEnvironment.master.ec2_instance_ids.first
       if !ec2_id
-        puts "No active ec2 instances found for #{CurrentEnvironment.master.name}"
+        puts "No active ec2 instances found for #{AwsEnvironment.master.name}"
         return
       end
       dns_name = AWS.ec2.instances[ec2_id].dns_name
