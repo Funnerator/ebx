@@ -79,7 +79,7 @@ pushing configuration changes"
 
     def stop
       regions.each do |region|
-        AwsEnvironment.new(region).stop
+        AwsEnvironment.new(region:region).stop
       end
     end
 
