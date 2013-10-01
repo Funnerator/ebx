@@ -44,7 +44,11 @@ module Ebx
     end
 
     def describe(verbose)
-      environments.map {|e| e.to_s(verbose) }
+      if environments.empty?
+        "No running environments found in: #{regions.join(', ')}"
+      else
+        environments.map {|e| e.to_s(verbose) }
+      end
     end
 
     def stop
