@@ -18,22 +18,10 @@ module Ebx
       Settings.regions
     end
 
-    def logs(follow = false)
-      logs = "/var/log/eb* /var/log/cfn*"
-      # /var/app/support/logs/* 
+    def logs
       regions.map do |region|
-        if follow
-          remote_execute("tail -f -n 0 #{logs}", true)
-        else
-          remote_execute("tail #{logs}")
-        end
+        AwsRemote.new(region: region).logs
       end
-    end
-
-    def console
-      app_location = '/var/app/current'
-      Ebx.set_region(Ebx.master_region)
-      remote_execute("cd #{app_location} && rails console", true)
     end
 
     def pull_config_settings
@@ -84,32 +72,6 @@ pushing configuration changes"
 
     def delete_application
       ApplicationGroup.new(regions).delete
-    end
-
-    def ec2_instance_ids
-      AwsEnvironment.master.ec2_instance_ids
-    end
-
-    def remote_shell
-      ec2_id = ec2_instance_ids.first
-      dns_name = AWS.ec2.instances[ec2_id].dns_name
-      puts "ssh ec2-user@#{dns_name}\n"
-
-      system "ssh ec2-user@#{dns_name}"
-    end
-
-    def remote_execute(cmd, subprocess = false)
-      ec2_id = AwsEnvironment.master.ec2_instance_ids.first
-      if !ec2_id
-        puts "No active ec2 instances found for #{AwsEnvironment.master.name}"
-        return
-      end
-      dns_name = AWS.ec2.instances[ec2_id].dns_name
-      if subprocess
-        system "ssh ec2-user@#{dns_name} #{cmd}"
-      else
-        `ssh ec2-user@#{dns_name} #{cmd}`
-      end
     end
   end
 end

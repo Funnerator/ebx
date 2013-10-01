@@ -26,7 +26,7 @@ module Ebx
       env = environments.find {|e| e[:status] != 'Terminated' }
 
       if env
-        desc = Settings.aws_settings_to_ebx(:environment, aws_desc)
+        desc = Settings.aws_settings_to_ebx(:environment, env)
         self.new(region: region, id: desc[:environment_id])
       end
     end

@@ -14,6 +14,7 @@ require 'ebx/aws_environment'
 require 'ebx/aws_s3'
 require 'ebx/notification_service'
 require 'ebx/route53'
+require 'ebx/aws_remote'
 
 require 'ebx/settings'
 require 'ebx/deploy_group'

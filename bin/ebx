@@ -89,7 +89,12 @@ command :logs do |c|
     setup_env(options)
 
     Ebx::AwsCredentialConfig.set_credentials
-    puts Ebx::DeployGroup.new.logs(options.f)
+
+    if options.f
+      Ebx::AwsRemote.new.logs(true)
+    else
+      puts Ebx::DeployGroup.new.logs
+    end
   end
 end
 
@@ -110,7 +115,7 @@ command :shell do |c|
   c.action do |args, options|
     setup_env(options)
 
-    Ebx::DeployGroup.new.remote_shell
+    Ebx::AwsRemote.new.remote_shell
   end
 end
 
@@ -121,7 +126,7 @@ command :console do |c|
   c.action do |args, options|
     setup_env(options)
 
-    Ebx::DeployGroup.new.console
+    Ebx::AwsRemote.new.console
   end
 end
 

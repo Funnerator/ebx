@@ -2,7 +2,7 @@ module Ebx
   class AwsService
     attr_accessor :region
 
-    def initialize(params)
+    def initialize(params = {})
       @region = params[:region] || Settings.master_region
     end
 
