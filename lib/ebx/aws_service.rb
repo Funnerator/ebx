@@ -10,7 +10,8 @@ module Ebx
       :elastic_beanstalk,
       :s3,
       :sqs,
-      :sns
+      :sns,
+      :ec2
     ]
 
     SERVICES.each do |service|

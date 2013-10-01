@@ -15,7 +15,7 @@ module Ebx
     end
 
     def self.master
-      self.new(region: Settings.master_region)
+      self.find_running(Settings.master_region)
     end
 
     def self.find_running(region)

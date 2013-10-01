@@ -23,21 +23,25 @@ module Ebx
     private
 
     def execute(command)
-      if !ec2_id
+      if ec2_id
+        puts command
+        `ssh ec2-user@#{dns_name} #{command}`
+      else
         puts "No active ec2 instances found in #{region}"
-        return
       end
-
-      `ssh ec2-user@#{dns_name} #{command}`
     end
 
     def execute_subprocess(command = "")
-      puts command
-      system "ssh ec2-user@#{dns_name} #{command}"
+      if ec2_id
+        puts command
+        system "ssh ec2-user@#{dns_name} #{command}"
+      else
+        puts "No active ec2 instances found in #{region}"
+      end
     end
 
     def ec2_id
-      AwsEnvironment.new(region: region).ec2_instance_ids.first
+      AwsEnvironment.find_running(region).ec2_instance_ids.first
     end
 
     def dns_name
