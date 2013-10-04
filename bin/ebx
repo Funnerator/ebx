@@ -47,9 +47,9 @@ command :info do |c|
   end
 end
 
-command :start do |c|
-  c.syntax = 'ebx start [env] [options]'
-  c.summary = 'Create an environment'
+command :deploy do |c|
+  c.syntax = 'ebx deploy [env] [options]'
+  c.summary = 'Deploy your application'
 
   c.action do |args, options|
     setup_env(options)
@@ -69,14 +69,14 @@ command :stop do |c|
   end
 end
 
-command :deploy do |c|
-  c.syntax = 'ebx deploy [env] [options]'
-  c.summary = 'Deploy your application'
+command :tasks do |c|
+  c.syntax = 'ebx tasks [env] [options]'
+  c.summary = 'Edit tasks run on deploy'
 
   c.action do |args, options|
     setup_env(options)
 
-    Ebx::DeployGroup.new.deploy
+    Ebx::TaskGroup.new
   end
 end
 
