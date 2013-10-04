@@ -3,10 +3,11 @@ module Ebx
     include PrettyPrint
 
     attr_accessor :id
+    NON_ACTIVE_STATUSES = ['Terminating', 'Terminated']
 
     def self.boot(region)
-      cur_env = self.find_running(region)
-      return cur_env if cur_env && cur_env.current?
+      #cur_env = self.find_running(region)
+      #return cur_env if cur_env && cur_env.current?
 
       new_env = AwsEnvironment.new(region: region)
       new_env.boot
@@ -15,7 +16,7 @@ module Ebx
     end
 
     def self.master
-      self.find_running(Settings.master_region)
+      self.find_running(Settings.master_region).first || self.new(region: Settings.master_region)
     end
 
     def self.find_running(region)
@@ -23,13 +24,11 @@ module Ebx
       environments = AWS.elastic_beanstalk.client.describe_environments(
         Settings.aws_params(:name)
       )[:environments]
-      env = environments.find {|e| e[:status] != 'Terminated' }
-
-      if env
-        desc = Settings.aws_settings_to_ebx(:environment, env)
-        self.new(region: region, id: desc[:environment_id])
-      end
+      envs = environments.select {|e| !['Terminated'].include?(e[:status]) }
+      envs.map {|e| self.new(region: region, id: e[:environment_id]) }
     end
+
+    # Find masters by cname pointed to from route53
 
     def initialize(params)
       super
@@ -37,7 +36,11 @@ module Ebx
     end
 
     def name
-      describe[:environment_name]
+      config[:environment_name] || Settings.get(:name)
+    end
+
+    def cname
+      status[:cname]
     end
 
     def boot
@@ -49,9 +52,9 @@ module Ebx
 
     def stop
       if running?
-        puts "Stopping #{name} - #{describe[:environment_id]}"
+        puts "Stopping #{region} | #{name}"
         elastic_beanstalk.client.terminate_environment({
-          environment_id: describe[:environment_id]
+          environment_id: id
         })
       end
     end
@@ -64,26 +67,30 @@ module Ebx
     end
 
     def current?
-      describe && describe[:version] == Settings.get(:version)
+      config[:version] == Settings.get(:version)
     end
 
     def running?
-      status[:env_status] == 'Ready'
+      !NON_ACTIVE_STATUSES.include?(status[:env_status])
+    end
+
+    def health
+      status[:env_health].downcase.to_sym
     end
 
     def describe
-      @description ||= begin
+      if id
         aws_desc = elastic_beanstalk.client.describe_environments({
           environment_ids: [id]
         })[:environments].first
 
-        Settings.aws_settings_to_ebx(:environment, aws_desc)
+        @description ||= Settings.aws_settings_to_ebx(:environment, aws_desc)
       end
     end
 
     CONFIG_ATTRS = [:environment_name, :solution_stack, :environment_id, :cname, :endpoint_url]
     def config
-      describe.select {|k, _| CONFIG_ATTRS.include? k }      
+      @config ||= (describe || {}).select {|k, _| CONFIG_ATTRS.include? k }      
     end
 
     STATUS_ATTRS = [:env_status, :env_health, :endpoint_url, :cname]
@@ -92,29 +99,22 @@ module Ebx
       if describe
         describe.select {|k, _| STATUS_ATTRS.include? k }      
       else
-        {env_status: 'not running', env_health: 'off', endpoint_url: 'none'}
+        {env_status: 'Terminated', env_health: 'off', cname: 'none'}
       end
     end
 
     def to_s(verbose = false)
-      str = "#{region} | #{name} | #{colorize(status[:env_status])} | #{colorize(status[:env_health])} | #{status[:cname]}\n"
+      msg = ["#{region} | #{name} | #{colorize(status[:env_status])} | #{colorize(status[:env_health])} | #{status[:cname]}"]
 
       if verbose
-        str << "Events in the last hour: \n"
-
-        events.each do |evt|
-          str << "#{colorize(evt[:severity])} #{evt[:event_date]} #{evt[:message]}\n"
-        end
+        msg << ["Events in the last hour:"]
+        msg = msg + events
       end
-
-      str
+      msg
     end
 
     def events(from_time = Time.now - 60*60*24)
-      elastic_beanstalk.client.describe_events({
-        environment_id: self.id,
-        start_time: from_time.iso8601
-      })[:events]
+      EnvironmentEvent.fetch(self, from_time)
     end
 
     def subscribe(notification_service)

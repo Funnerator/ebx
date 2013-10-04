@@ -3,32 +3,32 @@ module Ebx
     include PrettyPrint
 
     attr_reader :regions, :configs, :environments, :booting_environments
+    attr_accessor :start_time
 
     def initialize(regions)
       @regions = regions
       @configs = regions.map {|r| AwsConfigTemplate.new(region: r) }
-      @environments = regions.map {|r| AwsEnvironment.find_running(r) }.compact
+      @environments = regions.map do |r|
+        running = AwsEnvironment.find_running(r)
+        running.empty? ? AwsEnvironment.new(region: r) : running
+      end.flatten
     end
 
     def boot
       puts "Booting environments"
-      start_time = Time.now
+      self.start_time = Time.now
+
       NotificationService.new({}).create
       configs.each {|c| c.create }
       @booting_environments = regions.map { |r| AwsEnvironment.boot(r) }
 
-      puts 'Booting...'
-      booting_environments.cycle do |env|
-        sleep(1.0)
+      cycle_through_booting_environments
+      environments
+    end
 
-        event_time = start_time
-        start_time = Time.now
-        env.events(event_time).each do |evt|
-          puts "#{env.region} - #{colorize(evt[:severity])} #{evt[:event_date]} #{evt[:message]}"
-        end
-
-        after_boot(booting_environments.delete(env))  if env.running?
-      end
+    def during_boot(environment)
+      start_time = Time.now # TODO will miss some events
+      puts environment.events(start_time)
     end
 
     def after_boot(environment)
@@ -36,6 +36,8 @@ module Ebx
       if old_env && old_env.running?
         puts "Swapping CNAMES"
         old_env.swap_cname_with(environment)
+
+        puts "stopping #{old_env.name} #{old_env.running?} #{old_env.status}"
         old_env.stop
 
         environments.delete(old_env)
@@ -53,6 +55,19 @@ module Ebx
 
     def stop
       environments.each {|e| e.stop }
+    end
+
+    private
+
+    def cycle_through_booting_environments
+      booting_environments.cycle do |env|
+        sleep(1.0)
+        puts 'booting 1'
+        during_boot(env)
+        puts 'booting'
+        binding.pry if env.health == :green
+        after_boot(booting_environments.delete(env)) if (env.running? && env.health == :green)
+      end
     end
   end
 end

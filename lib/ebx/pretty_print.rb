@@ -4,7 +4,7 @@ module Ebx
       case str
       when 'Red', 'ERROR', 'FATAL'
         str.color(:red)
-      when 'WARN'
+      when 'WARN', 'Yellow'
         str.color(:yellow)
       when 'Ready', 'Green', 'INFO'
         str.color(:green)
