@@ -7,7 +7,7 @@ module Ebx
 
     def subscribe(listener)
       create
-      if !@sns.subscriptions.find {|s| s.arn == listener.arn }
+      if !@sns.subscriptions.find {|s| s.endpoint == listener.arn }
         @sns.subscribe(listener)
       end
     end
