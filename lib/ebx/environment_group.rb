@@ -57,6 +57,10 @@ module Ebx
       environments.each {|e| e.stop }
     end
 
+    def restart
+      environments.each {|e| e.restart }
+    end
+
     private
 
     def cycle_through_booting_environments
@@ -65,7 +69,8 @@ module Ebx
         puts 'booting 1'
         during_boot(env)
         puts 'booting'
-        binding.pry if env.health == :green
+        puts env.health, env.running?
+        #binding.pry if env.health == :green
         after_boot(booting_environments.delete(env)) if (env.running? && env.health == :green)
       end
     end

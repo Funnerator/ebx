@@ -24,6 +24,10 @@ module Ebx
       EnvironmentGroup.new(regions).stop
     end
 
+    def restart
+      EnvironmentGroup.new(regions).restart
+    end
+
     def delete_application
       ApplicationGroup.new(regions).delete
     end

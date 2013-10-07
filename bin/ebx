@@ -69,6 +69,17 @@ command :stop do |c|
   end
 end
 
+command :restart do |c|
+  c.syntax = 'ebx restart [env] [options]'
+  c.summary = 'Restart the application'
+
+  c.action do |args, options|
+    setup_env(options)
+
+    Ebx::DeployGroup.new.restart
+  end
+end
+
 command :tasks do |c|
   c.syntax = 'ebx tasks [env] [options]'
   c.summary = 'Edit tasks run on deploy'
@@ -76,7 +87,11 @@ command :tasks do |c|
   c.action do |args, options|
     setup_env(options)
 
-    Ebx::TaskGroup.new
+    case args[0]
+    when 'swap'
+    else
+      puts Ebx::TaskGroup.new.list
+    end
   end
 end
 

@@ -59,6 +59,12 @@ module Ebx
       end
     end
 
+    def restart
+      elastic_beanstalk.client.restart_app_server(
+        environment_id: id
+      )
+    end
+
     def swap_cname_with(other_env)
       elastic_beanstalk.client.swap_environment_cnam_es(
         source_environment_id: self.id,
