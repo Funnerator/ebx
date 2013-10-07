@@ -264,7 +264,7 @@ module Ebx
       private
 
       def init_config
-        create_dir('.ebextentions')
+        create_dir('.ebextensions')
         create_dir('eb')
 
         unless FileTest.file?(Ebx.config_path)

@@ -1,5 +1,6 @@
 module Ebx
   class AwsRemote < AwsService
+    APP_LOCATION = '/var/app/current'
 
     def logs(follow = false)
       logs = "/var/log/eb* /var/log/cfn*"
@@ -12,18 +13,22 @@ module Ebx
     end
 
     def console
-      app_location = '/var/app/current'
-      execute_subprocess("cd #{app_location} && rails console")
+      execute_subprocess("cd #{APP_LOCATION} && rails console")
     end
 
     def remote_shell
       execute_subprocess
     end
 
+    def rake(cmd)
+      execute("cd #{APP_LOCATION} && rake #{cmd}")
+    end
+
     private
 
     def execute(command)
-      if ec2_id
+      puts region
+      if running?
         puts command
         `ssh ec2-user@#{dns_name} #{command}`
       else
@@ -32,7 +37,8 @@ module Ebx
     end
 
     def execute_subprocess(command = "")
-      if ec2_id
+      puts region
+      if running?
         puts command
         system "ssh ec2-user@#{dns_name} #{command}"
       else
@@ -40,8 +46,12 @@ module Ebx
       end
     end
 
+    def running?
+      !AwsEnvironment.find_running(region).empty?
+    end
+
     def ec2_id
-      AwsEnvironment.find_running(region).ec2_instance_ids.first
+      AwsEnvironment.find_running(region).first.ec2_instance_ids.first
     end
 
     def dns_name
