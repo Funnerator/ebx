@@ -33,16 +33,14 @@ module Ebx
 
     def after_boot(environment)
       old_env = environments.find {|env| env.region == environment.region }
-      if old_env && old_env.running?
-        puts "Swapping CNAMES"
-        old_env.swap_cname_with(environment)
-
-        puts "stopping #{old_env.name} #{old_env.running?} #{old_env.status}"
-        old_env.stop
-
+      if old_env
+        if old_env.running?
+          puts "Swapping CNAMES"
+          old_env.swap_cname_with(environment) { old_env.stop }
+        end
         environments.delete(old_env)
-        environments << environment
       end
+      environments << environment
     end
 
     def describe(verbose)
@@ -66,11 +64,7 @@ module Ebx
     def cycle_through_booting_environments
       booting_environments.cycle do |env|
         sleep(1.0)
-        puts 'booting 1'
         during_boot(env)
-        puts 'booting'
-        puts env.health, env.running?
-        #binding.pry if env.health == :green
         after_boot(booting_environments.delete(env)) if (env.running? && env.health == :green)
       end
     end

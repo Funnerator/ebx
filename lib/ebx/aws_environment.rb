@@ -65,11 +65,21 @@ module Ebx
       )
     end
 
-    def swap_cname_with(other_env)
+    def swap_cname_with(other_env, &block)
       elastic_beanstalk.client.swap_environment_cnam_es(
         source_environment_id: self.id,
         destination_environment_id: other_env.id
       )
+      if block
+        while updating?
+          sleep 2
+        end
+        yield
+      end
+    end
+
+    def updating?
+      status[:env_status] == 'Updating'
     end
 
     def current?
