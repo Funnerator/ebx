@@ -11,7 +11,7 @@ module Ebx
 
       new_env = AwsEnvironment.new(region: region)
       new_env.boot
-      new_env.subscribe(NotificationService.new({}))
+      new_env.subscribe_to_db_queues
       new_env
     end
 
@@ -133,10 +133,12 @@ module Ebx
       EnvironmentEvent.fetch(self, from_time)
     end
 
-    def subscribe(notification_service)
+    def subscribe_to_db_queues
       puts "subscribing to notification service"
-      @queue ||= sqs.queues.create(Settings.get(:sqs_name))
-      notification_service.subscribe(@queue)
+      NotificationService.new.tap do |ns|
+        ns.attach_read_queue(sqs.queues.create(Settings.get(:read_sqs_name)))
+        ns.attach_write_queue(sqs.queues.create(Settings.get(:write_sqs_name)))
+      end
     end
 
     def describe_resources

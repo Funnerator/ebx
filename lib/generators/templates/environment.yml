@@ -9,6 +9,7 @@ attrs: &default_attrs
   description: test desc
   app_id: 1234sdlfk
   solution_stack: 64bit Amazon Linux running Ruby 1.9.3
+  domain: teezrapp.com
   options: *default_options
 regions: &default_regions
   us-west-2:
@@ -21,6 +22,7 @@ regions: &default_regions
         PARAM1: not a value
 environments:
   production:
+    subdomain: www
     regions: *default_regions
   test:
     regions: *default_regions
@@ -29,10 +31,14 @@ environments:
   development:
     regions:
       <<: *default_regions
+      us-west-2:
+        subdomain: dev
+        <<: *default_attrs
       us-east-1:
+        subdomain: dev
         <<: *default_attrs
         options:
           <<: *default_options
           aws:elasticbeanstalk:application:environment:
             PARAM1: value 3
-            RAILS_ENV: development
+            RAILS_ENV: developments

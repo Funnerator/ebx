@@ -200,8 +200,10 @@ module Ebx
           'version_description' => version_description,
           's3_bucket' => application_bucket_name(settings),
           's3_key' => application_version_name,
-          'sns_name' => notification_service_name,
-          'sqs_name' => queue_service_name,
+          'read_sns_name' => read_notification_service_name,
+          'write_sns_name' => write_notification_service_name,
+          'read_sqs_name' => read_queue_service_name,
+          'write_sqs_name' => write_queue_service_name,
           'template_name' => template_name(settings),
           'environment_name' => env_name
         }
@@ -219,12 +221,20 @@ module Ebx
         "git-#{application_version}"
       end
 
-      def notification_service_name
-        "#{Ebx.env}-sns"
+      def read_notification_service_name
+        "read-#{Ebx.env}-sns"
       end
 
-      def queue_service_name
-        "#{Ebx.env}-sqs"
+      def write_notification_service_name
+        "write-#{Ebx.env}-sns"
+      end
+
+      def read_queue_service_name
+        "read-#{Ebx.env}-sqs"
+      end
+
+      def write_queue_service_name
+        "write-#{Ebx.env}-sqs"
       end
 
       def version_description

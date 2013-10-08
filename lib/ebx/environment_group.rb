@@ -18,7 +18,6 @@ module Ebx
       puts "Booting environments"
       self.start_time = Time.now
 
-      NotificationService.new({}).create
       configs.each {|c| c.create }
       @booting_environments = regions.map { |r| AwsEnvironment.boot(r) }
 
@@ -44,11 +43,7 @@ module Ebx
     end
 
     def describe(verbose)
-      if environments.empty?
-        "No running environments found in: #{regions.join(', ')}"
-      else
-        environments.map {|e| e.to_s(verbose) }
-      end
+      environments.map {|e| e.to_s(verbose) }
     end
 
     def stop
