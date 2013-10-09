@@ -1,7 +1,8 @@
 module Ebx
   class NotificationService < AwsService
+    attr_reader :write_sns, :read_sns
 
-    def initialize(attrs)
+    def initialize(attrs = {})
       attrs.merge!(region: Settings.master_region)
       super(attrs)
 
