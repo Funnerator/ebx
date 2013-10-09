@@ -4,6 +4,19 @@ options: &default_options
     EC2KeyName: id_rsa
   aws:elasticbeanstalk:application:environment:
     PARAM1: a value
+environment_configuration: &default_environment_configuration
+    -
+     packages: 
+      rubygems: 
+        chef: '0.10.2' 
+    -
+      commands:
+        test_command: 
+          command: "echo 'test 2' >> /var/log/cfn-hup.log"
+      container_commands:
+        01deploy:
+          command: touch here.txt
+          leader_only: false
 attrs: &default_attrs
   name: test_app_2
   description: test desc
@@ -11,6 +24,7 @@ attrs: &default_attrs
   solution_stack: 64bit Amazon Linux running Ruby 1.9.3
   domain: teezrapp.com
   options: *default_options
+  environment_configuration: *default_environment_configuration
 regions: &default_regions
   us-west-2:
     <<: *default_attrs
