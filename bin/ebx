@@ -148,20 +148,21 @@ end
 command :run do |c|
   c.syntax = 'ebx run <Type> [--all] <Task>'
   c.summary = 'run a remote rake task'
-  c.option '--all', 'Run in all regions'
+  c.option '--all-regions', 'Run in all regions'
+  c.option '--all-machines', 'Run on all machines within a region'
 
   c.action do |args, options|
     setup_env(options)
     type = parse_arg(args, nil, ['rake'])
     cmd = args.join(' ')
     # error for --all and -r in same command
-    if !options.r && !options.all
+    if !options.r && !options.all_regions
       Ebx.regions = [Ebx::Settings.master_region]
     end
 
     case type
     when 'rake'
-      Ebx::RemoteGroup.new.rake(cmd)
+      Ebx::RemoteGroup.new.rake(cmd, {all_machines: options.all_machines})
     end
   end
 end

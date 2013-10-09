@@ -1,6 +1,12 @@
 module Ebx
   class AwsRemote < AwsService
     APP_LOCATION = '/var/app/current'
+    attr_reader :all_machines
+
+    def initialize(options = {})
+      super(options)
+      @all_machines = !!options[:all_machines]
+    end
 
     def logs(follow = false)
       logs = "/var/log/eb* /var/log/cfn*"
@@ -27,22 +33,14 @@ module Ebx
     private
 
     def execute(command)
-      puts region
-      if running?
-        puts command
+      setup_command do |dns_name|
         `ssh ec2-user@#{dns_name} #{command}`
-      else
-        puts "No active ec2 instances found in #{region}"
       end
     end
 
     def execute_subprocess(command = "")
-      puts region
-      if running?
-        puts command
+      setup_command do |dns_name|
         system "ssh ec2-user@#{dns_name} #{command}"
-      else
-        puts "No active ec2 instances found in #{region}"
       end
     end
 
@@ -50,12 +48,29 @@ module Ebx
       !AwsEnvironment.find_running(region).empty?
     end
 
-    def ec2_id
+    def leader_ec2_id
       AwsEnvironment.find_running(region).first.ec2_instance_ids.first
     end
 
-    def dns_name
-      ec2.instances[ec2_id].dns_name
+    def leader_dns_name
+      ec2.instances[leader_ec2_id].dns_name
+    end
+
+    def dns_names
+      ec2.instances.map(&:dns_name)
+    end
+
+    private
+
+    def setup_command(&block)
+      puts region
+      if running?
+        dnames = all_machines ? [leader_dns_name] : dns_names
+        puts command
+        dnames.each { |n| yield(n) }
+      else
+        puts "No active ec2 instances found in #{region}"
+      end
     end
   end
 end

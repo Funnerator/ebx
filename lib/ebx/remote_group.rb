@@ -6,9 +6,9 @@ module Ebx
       @regions = regions
     end
 
-    def rake(cmd)
+    def rake(cmd, options = {})
       regions.each do |r|
-        AwsRemote.new(region: r).rake(cmd)
+        AwsRemote.new(options.merge(region: r)).rake(cmd)
       end
     end
   end
