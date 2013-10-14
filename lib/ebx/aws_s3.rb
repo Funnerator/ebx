@@ -9,8 +9,12 @@ module Ebx
       app_bucket.objects[Settings.get(:s3_key)].tap do |o|
         unless o.exists?
           puts 'Bundling and pushing project'
-          zip = `git ls-tree -r --name-only HEAD | zip - -q -@`
-          o.write(zip)
+          # This seems preferable, unfortunately seems to create an archive
+          # that aws config parsing has a problem w/
+          #zip = `git ls-tree -r --name-only HEAD | zip - -q -@`
+          `git ls-tree -r --name-only HEAD | zip #{Settings.get(:s3_key)}.zip -q -@`
+          o.write(File.open(Settings.get(:s3_key)+'.zip'))
+          File.delete(Settings.get(:s3_key)+".zip")
         end
       end
     end
