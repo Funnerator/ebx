@@ -33,13 +33,13 @@ module Ebx
     private
 
     def execute(command)
-      setup_command do |dns_name|
+      setup_command(command) do |dns_name|
         `ssh ec2-user@#{dns_name} #{command}`
       end
     end
 
     def execute_subprocess(command = "")
-      setup_command do |dns_name|
+      setup_command(command) do |dns_name|
         system "ssh ec2-user@#{dns_name} #{command}"
       end
     end
@@ -60,13 +60,10 @@ module Ebx
       ec2.instances.map(&:dns_name)
     end
 
-    private
-
-    def setup_command(&block)
-      puts region
+    def setup_command(command, &block)
       if running?
-        dnames = all_machines ? [leader_dns_name] : dns_names
-        puts command
+        dnames = all_machines ? dns_names : [leader_dns_name]
+        puts "#{region} - #{command}"
         dnames.each { |n| yield(n) }
       else
         puts "No active ec2 instances found in #{region}"

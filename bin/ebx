@@ -16,6 +16,7 @@ command :init do |c|
 
   c.action do |args, options|
     Ebx::Settings.init_config
+    puts "Created #{Ebx.config_path}"
   end
 end
 
