@@ -23,6 +23,7 @@ require 'ebx/task_group'
 require 'ebx/settings'
 require 'ebx/deploy_group'
 require 'ebx/boot_configuration'
+require 'ebx/repository'
 
 require 'ebx/core_ext/hash/deep_merge'
 require 'ebx/core_ext/hash/keys'

@@ -5,10 +5,11 @@ module Ebx
   class DeployGroup
 
     def deploy
-      check_for_git_repo
+      Repository.check_pushed!
       ApplicationGroup.new(regions).push
       environments = EnvironmentGroup.new(regions).boot
       Route53.new.update_cnames(environments)
+      Repository.tag_deployment
     end
 
     def describe(verbose = false)
@@ -35,14 +36,6 @@ module Ebx
 
     def regions
       Settings.regions
-    end
-
-    private
-
-    def check_for_git_repo
-      if `git rev-parse --is-inside-work-tree`.chomp != 'true'
-        raise "This command must be run from within a git repository"
-      end
     end
   end
 end
