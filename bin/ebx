@@ -20,6 +20,14 @@ command :init do |c|
   end
 end
 
+command :pry do |c|
+  c.syntax = 'ebx pry'
+  c.summary = 'interactive ebx shell'
+
+  c.action do |args, options|
+    Ebx.pry
+  end
+end
 
 command :info do |c|
   c.syntax = 'ebx info [env] [options]'
