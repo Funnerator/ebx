@@ -1,3 +1,5 @@
+# The format of this file is generated. Any changes made to its structure are
+# not guaranteed to persist through a `ebx config pull`
 ---
 options: &default_options
   aws:autoscaling:launchconfiguration:
@@ -26,9 +28,9 @@ attrs: &default_attrs
   options: *default_options
   environment_configuration: *default_environment_configuration
 regions: &default_regions
-  us-west-2:
+  us-west-2: &us-west-2-attrs
     <<: *default_attrs
-  us-east-1:
+  us-east-1: &us-east-1-attrs
     <<: *default_attrs
     options:
       <<: *default_options
@@ -47,10 +49,10 @@ environments:
       <<: *default_regions
       us-west-2:
         subdomain: dev
-        <<: *default_attrs
+        <<: *us-west-2-attrs
       us-east-1:
         subdomain: dev
-        <<: *default_attrs
+        <<: *us-east-1-attrs
         options:
           <<: *default_options
           aws:elasticbeanstalk:application:environment:

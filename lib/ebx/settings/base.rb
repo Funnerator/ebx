@@ -26,6 +26,7 @@ module Ebx
       rescue NoMethodError
         raise "Region #{region} not defined in #{Ebx.config_path}"
       end
+      alias_method :[], :get
 
       def set(attr, value)
         config[region][attr.to_s] = value
@@ -274,20 +275,10 @@ module Ebx
       private
 
       def init_config
-        create_dir('.ebextensions')
-        create_dir('eb')
+        FileOp.create_dir('eb')
 
         unless FileTest.file?(Ebx.config_path)
           FileUtils.cp(File.expand_path('../../../generators/templates/environment.yml', __FILE__), Ebx.config_path)
-        end
-      end
-
-      def create_dir(name)
-        dir = File.expand_path(name, Dir.pwd)
-
-        raise "#{name} exists and is not a directory" if FileTest.file?(dir)
-        unless FileTest.directory?(dir)
-          Dir.mkdir(dir)
         end
       end
     end

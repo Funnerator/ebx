@@ -22,6 +22,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake"
 
   spec.add_runtime_dependency("commander", "~> 4.1.5")
+  spec.add_runtime_dependency("rubyzip", "~> 1.0.0")
   spec.add_runtime_dependency("aws-sdk", "~> 1.17.0")
   spec.add_runtime_dependency("rainbow", "~> 1.1.4")
   spec.add_runtime_dependency("pry", "> 0")

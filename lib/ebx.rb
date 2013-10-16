@@ -1,6 +1,7 @@
 require 'aws'
 require 'pry'
 require 'rainbow'
+require 'zip'
 
 require 'ebx/version'
 require 'ebx/pretty_print'
@@ -21,10 +22,13 @@ require 'ebx/task_group'
 
 require 'ebx/settings'
 require 'ebx/deploy_group'
+require 'ebx/boot_configuration'
 
 require 'ebx/core_ext/hash/deep_merge'
 require 'ebx/core_ext/hash/keys'
 require 'ebx/core_ext/object/deep_dup'
+
+require 'ebx/lib/file_op'
 
 module Ebx
   extend self
