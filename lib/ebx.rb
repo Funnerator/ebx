@@ -53,4 +53,6 @@ module Ebx
   def region
     AWS.config.region
   end
+
+  AwsCredentialConfig.set_credentials
 end

@@ -1,0 +1,109 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://elasticbeanstalk.us-west-2.amazonaws.com/
+    body:
+      encoding: UTF-8
+      string: Action=DescribeEnvironments&ApplicationName=test_app_2&Timestamp=2013-10-17T00%3A03%3A45Z&Version=2010-12-01
+    headers:
+      Content-Type:
+      - application/x-www-form-urlencoded; charset=utf-8
+      Accept-Encoding:
+      - ''
+      Content-Length:
+      - '108'
+      User-Agent:
+      - aws-sdk-ruby/1.17.0 ruby/2.0.0 x86_64-darwin12.3.0
+      Host:
+      - elasticbeanstalk.us-west-2.amazonaws.com
+      X-Amz-Date:
+      - 20131017T000345Z
+      X-Amz-Content-Sha256:
+      - 15851e4ece8a1736db4ea20a709dd8115a506b5e59f340b1bb60edeac9d425f7
+      Authorization:
+      - AWS4-HMAC-SHA256 Credential=AKIAIZGLLSJXZOOR5KSQ/20131017/us-west-2/elasticbeanstalk/aws4_request,
+        SignedHeaders=content-length;content-type;host;user-agent;x-amz-content-sha256;x-amz-date,
+        Signature=d44620598c49db1c2674415778301dd2878fa2a8228b62a3079fcd285a431b22
+      Accept:
+      - '*/*'
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      X-Amzn-Requestid:
+      - 9748068d-36bf-11e3-9c40-05157518713d
+      Content-Type:
+      - text/xml
+      Content-Length:
+      - '316'
+      Date:
+      - Thu, 17 Oct 2013 00:03:45 GMT
+    body:
+      encoding: UTF-8
+      string: |
+        <DescribeEnvironmentsResponse xmlns="http://elasticbeanstalk.amazonaws.com/docs/2010-12-01/">
+          <DescribeEnvironmentsResult>
+            <Environments/>
+          </DescribeEnvironmentsResult>
+          <ResponseMetadata>
+            <RequestId>9748068d-36bf-11e3-9c40-05157518713d</RequestId>
+          </ResponseMetadata>
+        </DescribeEnvironmentsResponse>
+    http_version: 
+  recorded_at: Thu, 17 Oct 2013 00:03:45 GMT
+- request:
+    method: post
+    uri: https://elasticbeanstalk.us-east-1.amazonaws.com/
+    body:
+      encoding: UTF-8
+      string: Action=DescribeEnvironments&ApplicationName=test_app_2&Timestamp=2013-10-17T00%3A03%3A45Z&Version=2010-12-01
+    headers:
+      Content-Type:
+      - application/x-www-form-urlencoded; charset=utf-8
+      Accept-Encoding:
+      - ''
+      Content-Length:
+      - '108'
+      User-Agent:
+      - aws-sdk-ruby/1.17.0 ruby/2.0.0 x86_64-darwin12.3.0
+      Host:
+      - elasticbeanstalk.us-east-1.amazonaws.com
+      X-Amz-Date:
+      - 20131017T000345Z
+      X-Amz-Content-Sha256:
+      - 15851e4ece8a1736db4ea20a709dd8115a506b5e59f340b1bb60edeac9d425f7
+      Authorization:
+      - AWS4-HMAC-SHA256 Credential=AKIAIZGLLSJXZOOR5KSQ/20131017/us-east-1/elasticbeanstalk/aws4_request,
+        SignedHeaders=content-length;content-type;host;user-agent;x-amz-content-sha256;x-amz-date,
+        Signature=96095213164927d006fa8401e8ef8d71d2d1562f24664815f0e21cfb2b865c29
+      Accept:
+      - '*/*'
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      X-Amzn-Requestid:
+      - 97e24ab7-36bf-11e3-9145-8fd6c0f9a5b5
+      Content-Type:
+      - text/xml
+      Content-Length:
+      - '316'
+      Date:
+      - Thu, 17 Oct 2013 00:03:46 GMT
+    body:
+      encoding: UTF-8
+      string: |
+        <DescribeEnvironmentsResponse xmlns="http://elasticbeanstalk.amazonaws.com/docs/2010-12-01/">
+          <DescribeEnvironmentsResult>
+            <Environments/>
+          </DescribeEnvironmentsResult>
+          <ResponseMetadata>
+            <RequestId>97e24ab7-36bf-11e3-9145-8fd6c0f9a5b5</RequestId>
+          </ResponseMetadata>
+        </DescribeEnvironmentsResponse>
+    http_version: 
+  recorded_at: Thu, 17 Oct 2013 00:03:46 GMT
+recorded_with: VCR 2.6.0
