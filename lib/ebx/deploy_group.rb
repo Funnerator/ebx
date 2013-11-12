@@ -1,5 +1,6 @@
 require 'ebx/application_group'
 require 'ebx/environment_group'
+require 'ebx/database_group'
 
 module Ebx
   class DeployGroup
@@ -7,8 +8,7 @@ module Ebx
     def deploy
       Repository.check_pushed!
       ApplicationGroup.new(regions).push
-      environments = EnvironmentGroup.new(regions).boot
-      Route53.new.update_cnames(environments)
+      EnvironmentGroup.new(regions).boot
       Repository.tag_deployment
     end
 

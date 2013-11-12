@@ -3,7 +3,15 @@ module Ebx
     attr_accessor :region
 
     def initialize(params = {})
-      @region = params[:region] || Settings.master_region
+      @environment = params[:environment]
+      @region = AwsService.extract_region(params)
+    end
+
+    def self.extract_region(params)
+      env = params[:env]
+      (env && env.region) ||
+        params[:region] ||
+        Settings.master_region
     end
 
     SERVICES = [
