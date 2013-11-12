@@ -6,7 +6,7 @@ module Ebx
 
     def initialize(environments)
       @environments = environments
-      @databases = @environments.map { |e| AwsDatabase.new(e) }
+      @databases = @environments.map { |e| Database::AwsDatabase.new(e) }
     end
 
     def self.boot

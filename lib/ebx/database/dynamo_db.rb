@@ -1,6 +1,6 @@
 module Ebx
   module Database
-    class DynamoDb
+    class DynamoDb < AwsDatabase
       def boot
         subscribe_to_ns
       end

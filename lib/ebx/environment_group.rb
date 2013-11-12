@@ -50,7 +50,7 @@ module Ebx
     end
 
     def during_boot(environment)
-      puts environment.events(start_time)
+      puts environment.events(@start_time)
       @start_time = Time.now # TODO will miss some events
     end
 
