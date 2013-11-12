@@ -8,7 +8,7 @@ module Ebx
       Ebx.set_region(env.region)
       aws_events = AWS.elastic_beanstalk.client.describe_events({
         environment_id: env.id,
-        start_time: from_time.iso8601
+        start_time: from_time.utc.iso8601
       })[:events]
       aws_events.map {|e| self.new(e.merge(region: env.region)) }
     end

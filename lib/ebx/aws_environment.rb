@@ -56,6 +56,8 @@ module Ebx
           environment_id: id
         })
       end
+    rescue Exception => e
+      puts e.message
     end
 
     def restart
@@ -141,6 +143,5 @@ module Ebx
     def ec2_instance_ids
       describe_resources[:instances].collect{|i| i[:id]}
     end
-
   end
 end

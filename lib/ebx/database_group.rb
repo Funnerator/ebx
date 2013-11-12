@@ -1,4 +1,5 @@
-require 'ebx/aws_database'
+require 'ebx/database/aws_database'
+require 'ebx/database/dynamo_db'
 
 module Ebx
   class DatabaseGroup
@@ -6,12 +7,11 @@ module Ebx
 
     def initialize(environments)
       @environments = environments
-      @databases = @environments.map { |e| Database::AwsDatabase.new(e) }
+      @databases = @environments.map { |e| Database::AwsDatabase.build(environment: e) }
     end
 
-    def self.boot
+    def boot
       @databases.each {|db| db.boot }
     end
-
   end
 end

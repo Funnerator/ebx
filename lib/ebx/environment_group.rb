@@ -14,10 +14,10 @@ module Ebx
     end
 
     def boot
-      puts "Booting environments"
       configs.each {|c| c.create }
       @booting_environments = regions.map { |r| AwsEnvironment.boot(r) }
 
+      puts "Booting environments"
       cycle_through_booting_environments
 
       DatabaseGroup.new(environments).boot
@@ -50,8 +50,14 @@ module Ebx
     end
 
     def during_boot(environment)
-      puts environment.events(@start_time)
-      @start_time = Time.now # TODO will miss some events
+      @last_print ||= {}
+      events = environment.events(@start_time)
+      max_event = events.max_by(&:event_date)
+
+      new_events = events.select {|e| !@last_print[environment] || e.event_date > @last_print[environment] }
+      @last_print[environment] = max_event ? max_event.event_date : nil
+
+      puts new_events
     end
 
     def after_boot(environment)

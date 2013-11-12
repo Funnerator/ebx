@@ -27,6 +27,7 @@ attrs: &default_attrs
   domain: teezrapp.com
   options: *default_options
   environment_configuration: *default_environment_configuration
+  database: *default_db
 
 database: &default_db
   adapter: dynamo_db
